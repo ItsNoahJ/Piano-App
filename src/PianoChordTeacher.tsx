@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as Tone from 'tone';
 import { 
   ROOT_NOTES, 
@@ -39,6 +39,8 @@ const PianoChordTeacher = () => {
   const [playbackPattern, setPlaybackPattern] = useState<PlaybackPattern>('ascending');
   const [playbackTempo, setPlaybackTempo] = useState(120); // Default tempo: 120 BPM
   
+  const currentSequenceRef = useRef<Tone.Sequence | null>(null);
+
   // Available modes for UI
   const availableModes = getAvailableModes();
 
@@ -96,6 +98,14 @@ const PianoChordTeacher = () => {
         synth.dispose();
         console.log("Synth disposed on unmount");
       }
+      // Clean up sequence and transport on unmount
+      if (currentSequenceRef.current) {
+        currentSequenceRef.current.dispose();
+        currentSequenceRef.current = null;
+      }
+      Tone.Transport.cancel();
+      Tone.Transport.stop();
+      console.log("Tone.Transport stopped and sequence cleared on unmount");
     };
   }, [synth]);
 
@@ -144,6 +154,9 @@ const PianoChordTeacher = () => {
     { name: 'C Major (Lower)', notes: ['C2', 'E2', 'G2'], description: 'The C major chord in a lower octave.' },
     { name: 'G Major (Lower)', notes: ['G2', 'B2', 'D3'], description: 'The G major chord in a lower octave.' },
     { name: 'D Major', notes: ['D3', 'F#3', 'A3'], description: 'The D major chord consists of D, F#, and A notes.' },
+    { name: 'A Major', notes: ['A3', 'C#4', 'E4'], description: 'The A major chord consists of A, C#, and E notes.' }, 
+    { name: 'B Minor', notes: ['B3', 'D4', 'F#4'], description: 'The B minor chord consists of B, D, and F# notes.' },
+    { name: 'G Minor', notes: ['G3', 'Bb3', 'D4'], description: 'The G minor chord consists of G, Bb, and D notes.' },
   ];
 
   // Add this helper function for volume compensation based on note
@@ -177,10 +190,12 @@ const PianoChordTeacher = () => {
       const velocity = getNoteVelocity(note);
       console.log(`Note ${note} velocity: ${velocity}`);
       synth.triggerAttackRelease(note, '8n', undefined, velocity);
-      setActiveNotes((prev) => [...prev, note]);
+      
+      // Create a new array for activeNotes instead of modifying the existing one
+      setActiveNotes(prev => [...prev, note]);
       
       setTimeout(() => {
-        setActiveNotes((prev) => prev.filter((n) => n !== note));
+        setActiveNotes(prev => prev.filter(n => n !== note));
       }, 300);
     } catch (error) {
       console.error("Error playing note:", error);
@@ -197,6 +212,10 @@ const PianoChordTeacher = () => {
     try {
       console.log("Playing chord:", chordNotes);
       setIsPlaying(true);
+      
+      // Clear any old active notes first
+      setActiveNotes([]);
+      // Then set the new active notes
       setActiveNotes(chordNotes);
       
       // Make sure we have valid notes before attempting to play
@@ -258,17 +277,30 @@ const PianoChordTeacher = () => {
   // Replace the playScale function with this sequential playback implementation
   const playScale = (scaleNotes: string[]) => {
     if (!synth || !isToneInitialized || scaleNotes.length === 0) {
-      console.warn("Cannot play scale: Synth not initialized or no scale selected");
+      console.warn("Cannot play scale: Synth not initialized, Tone not ready, or no scale notes provided");
+      // Ensure isPlaying is false if we return early
+      if (scaleNotes.length === 0 && isPlaying) {
+        setIsPlaying(false);
+      }
       return;
     }
-    
+
+    // Log for debugging
+    console.log("Playing scale:", scaleNotes);
+
+    // Dispose previous sequence and stop transport
+    if (currentSequenceRef.current) {
+      currentSequenceRef.current.dispose();
+      currentSequenceRef.current = null;
+    }
+    Tone.Transport.cancel(); // Clear any scheduled transport events
+    Tone.Transport.stop();   // Stop the transport before starting a new one
+
     try {
-      console.log("Playing scale:", scaleNotes);
       setIsPlaying(true);
-      
-      // Create the sequence of notes based on selected pattern
+      setActiveNotes([]); // Clear active notes at the beginning
+
       let notesToPlay: string[] = [];
-      
       switch (playbackPattern) {
         case 'ascending':
           notesToPlay = [...scaleNotes];
@@ -281,74 +313,64 @@ const PianoChordTeacher = () => {
           notesToPlay = [...scaleNotes, ...[...scaleNotes].slice(0, -1).reverse()];
           break;
       }
-      
-      // Create a sequence for playing notes one after another
-      const noteIndex = { current: 0 };
-      const highlightedNotes = { current: [] };
-      
-      // Set up timing with Transport
-      Tone.Transport.bpm.value = playbackTempo;
-      
-      // Schedule each note to play sequentially
-      const seq = new Tone.Sequence(
-        (time, _) => {
-          if (noteIndex.current < notesToPlay.length) {
-            const currentNote = notesToPlay[noteIndex.current];
-            
-            // Clear previous highlighted notes
-            setActiveNotes(prev => {
-              highlightedNotes.current = [currentNote];
-              return [currentNote];
-            });
-            
-            // Play the current note with calculated velocity
-            const velocity = getNoteVelocity(currentNote);
-            synth.triggerAttackRelease(currentNote, "8n", time, velocity);
-            
-            noteIndex.current += 1;
-          } else {
-            // All notes played, clean up
-            seq.stop();
-            Tone.Transport.stop();
-            setActiveNotes([]);
-            setIsPlaying(false);
-            
-            // Reset for next playback
-            noteIndex.current = 0;
-          }
-        },
-        ['C4'],
-        '8n'
-      );
-      
-      // Start playback
-      seq.start(0);
-      Tone.Transport.start();
-      
-      // Set a safety timeout to ensure we don't get stuck in playing state
-      const maxDuration = (notesToPlay.length * 60 / playbackTempo) * 1000 + 1000; // calculated from tempo
-      setTimeout(() => {
-        if (seq) {
-          seq.dispose();
-        }
-        setActiveNotes([]);
+
+      // If after pattern logic, notesToPlay is empty (e.g. original scaleNotes was a single note for 'both')
+      if (notesToPlay.length === 0) {
         setIsPlaying(false);
-      }, maxDuration);
+        setActiveNotes([]);
+        console.warn("No notes to play after applying pattern.");
+        return;
+      }
+      
+      // Set the tempo
+      Tone.Transport.bpm.value = playbackTempo;
+
+      // Create a simplified sequencer using setTimeout for more reliable playback
+      let noteIndex = 0;
+      const playNextNote = () => {
+        if (noteIndex < notesToPlay.length) {
+          const note = notesToPlay[noteIndex];
+          // Highlight the current note
+          setActiveNotes([note]);
+          // Play the note
+          const velocity = getNoteVelocity(note);
+          synth.triggerAttackRelease(note, "8n", undefined, velocity);
+          
+          // Schedule the next note
+          noteIndex++;
+          // Calculate next note delay based on tempo (60000ms / bpm = ms per quarter note)
+          // For 8th notes, divide by 2
+          const noteDelay = (60000 / playbackTempo) / 2;
+          setTimeout(playNextNote, noteDelay);
+        } else {
+          // Done playing
+          setActiveNotes([]);
+          setIsPlaying(false);
+        }
+      };
+      
+      // Start playing the sequence
+      playNextNote();
       
     } catch (error) {
       console.error("Error playing scale:", error);
       setIsPlaying(false);
+      setActiveNotes([]); // Ensure notes are cleared on error
     }
   };
 
   // Check if a note is in the selected scale
   const isNoteInSelectedScale = (note: string): boolean => {
-    return currentScale.includes(note) || (selectedChord?.notes.includes(note) || false);
+    return currentScale.includes(note);
   };
 
-  // Change the existing function to use the scale check
+  // Check if a note is in the selected chord
   const isNoteInSelectedChord = (note: string): boolean => {
-    return isNoteInSelectedScale(note);
+    if (showScalesInterface) {
+      return isNoteInSelectedScale(note);
+    } else {
+      return selectedChord?.notes.includes(note) || false;
+    }
   };
 
   // Helper function to render black keys
@@ -381,12 +403,12 @@ const PianoChordTeacher = () => {
             e.stopPropagation();
             playNote(blackKey.note);
           }}
-          className={`absolute h-3/5 rounded-b-md z-10 transition-colors pointer-events-auto shadow-md border-x border-b border-gray-800 ${
+          className={`absolute h-3/5 rounded-b-md z-10 transition-colors pointer-events-auto shadow-md border-x border-b ${
             isActive
               ? 'bg-indigo-700 border-indigo-900'
               : isInChord
-                ? 'bg-indigo-900 border-indigo-950'
-                : 'bg-gray-800 hover:bg-gray-700'
+                ? 'bg-indigo-800 border-indigo-900 shadow-inner'
+                : 'bg-gray-800 hover:bg-gray-700 border-gray-800'
           }`}
           style={{ 
             left: `${position}%`,
@@ -401,6 +423,20 @@ const PianoChordTeacher = () => {
       );
     });
   };
+
+  // Make sure piano keyboard is updated when switching between chord and scale modes
+  useEffect(() => {
+    // When switching interfaces, clear active notes
+    setActiveNotes([]);
+  }, [showScalesInterface]);
+
+  // Fix keyboard movement by adding a fixed height to the container
+  useEffect(() => {
+    // Reset active notes when changing modes, chords, or scales
+    return () => {
+      setActiveNotes([]);
+    };
+  }, [selectedChord, selectedRootNote, selectedMode]);
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
@@ -524,7 +560,13 @@ const PianoChordTeacher = () => {
               <h3 className="text-lg font-medium mb-2 text-gray-700">4. Playback Pattern:</h3>
               <div className="flex space-x-2">
                 <button
-                  onClick={() => setPlaybackPattern('ascending')}
+                  onClick={() => {
+                    setPlaybackPattern('ascending');
+                    if (selectedRootNote && selectedMode && currentScale.length > 0) {
+                      // Use a small delay to ensure state is updated before playing
+                      setTimeout(() => playScale(currentScale), 100);
+                    }
+                  }}
                   className={`px-4 py-2 rounded-md transition-colors ${
                     playbackPattern === 'ascending'
                       ? 'bg-indigo-600 text-white'
@@ -534,7 +576,13 @@ const PianoChordTeacher = () => {
                   Ascending
                 </button>
                 <button
-                  onClick={() => setPlaybackPattern('descending')}
+                  onClick={() => {
+                    setPlaybackPattern('descending');
+                    if (selectedRootNote && selectedMode && currentScale.length > 0) {
+                      // Use a small delay to ensure state is updated before playing
+                      setTimeout(() => playScale(currentScale), 100);
+                    }
+                  }}
                   className={`px-4 py-2 rounded-md transition-colors ${
                     playbackPattern === 'descending'
                       ? 'bg-indigo-600 text-white'
@@ -544,7 +592,13 @@ const PianoChordTeacher = () => {
                   Descending
                 </button>
                 <button
-                  onClick={() => setPlaybackPattern('both')}
+                  onClick={() => {
+                    setPlaybackPattern('both');
+                    if (selectedRootNote && selectedMode && currentScale.length > 0) {
+                      // Use a small delay to ensure state is updated before playing
+                      setTimeout(() => playScale(currentScale), 100);
+                    }
+                  }}
                   className={`px-4 py-2 rounded-md transition-colors ${
                     playbackPattern === 'both'
                       ? 'bg-indigo-600 text-white'
@@ -566,7 +620,14 @@ const PianoChordTeacher = () => {
                   max="240"
                   step="10"
                   value={playbackTempo}
-                  onChange={(e) => setPlaybackTempo(parseInt(e.target.value))}
+                  onChange={(e) => {
+                    const newTempo = parseInt(e.target.value);
+                    setPlaybackTempo(newTempo);
+                    // If we have a scale selected, play it with the new tempo after a small delay
+                    if (selectedRootNote && selectedMode && currentScale.length > 0 && !isPlaying) {
+                      setTimeout(() => playScale(currentScale), 100);
+                    }
+                  }}
                   className="w-48"
                 />
                 <span className="text-gray-700 w-12">{playbackTempo}</span>
@@ -587,45 +648,16 @@ const PianoChordTeacher = () => {
                     return (
                       <span 
                         key={note} 
-                        className={`font-mono px-2 py-1 rounded transition-colors ${
+                        className={`font-mono px-2 py-1 rounded transition-colors border ${
                           isHighlighted 
-                            ? 'bg-indigo-500 text-white' 
-                            : 'bg-indigo-100'
+                            ? 'bg-indigo-500 text-white border-indigo-500' 
+                            : 'bg-indigo-200 text-indigo-700 border-indigo-400'
                         }`}
                       >
                         {note}
                       </span>
                     );
                   })}
-                </div>
-                
-                <div className="flex items-center mt-4">
-                  <button
-                    onClick={() => playScale(currentScale)}
-                    disabled={isPlaying || !isToneInitialized}
-                    className={`px-4 py-2 rounded-md ${
-                      isPlaying || !isToneInitialized
-                        ? 'bg-gray-400 cursor-not-allowed'
-                        : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                    }`}
-                  >
-                    {isPlaying ? 'Playing...' : 'Play Scale'}
-                  </button>
-                  
-                  {isPlaying && (
-                    <div className="ml-4 flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                      <div 
-                        className="bg-indigo-600 h-full transition-all duration-300"
-                        style={{ 
-                          width: `${
-                            activeNotes.length > 0 
-                              ? (currentScale.indexOf(activeNotes[0]) + 1) / currentScale.length * 100
-                              : 0
-                          }%` 
-                        }}
-                      />
-                    </div>
-                  )}
                 </div>
               </div>
             )}
@@ -668,10 +700,10 @@ const PianoChordTeacher = () => {
                 return (
                   <span 
                     key={note} 
-                    className={`font-mono px-2 py-1 rounded transition-colors ${
+                    className={`font-mono px-2 py-1 rounded transition-colors border ${
                       isHighlighted 
-                        ? 'bg-indigo-500 text-white' 
-                        : 'bg-indigo-100'
+                        ? 'bg-indigo-500 text-white border-indigo-500' 
+                        : 'bg-indigo-200 text-indigo-700 border-indigo-400'
                     }`}
                   >
                     {note}
@@ -691,15 +723,6 @@ const PianoChordTeacher = () => {
               >
                 {isPlaying ? 'Playing...' : 'Play Chord'}
               </button>
-              
-              {isPlaying && (
-                <div className="ml-4 flex-1 bg-gray-200 rounded-full h-2 overflow-hidden">
-                  <div 
-                    className="bg-indigo-600 h-full transition-all duration-300"
-                    style={{ width: `${activeNotes.length > 0 ? 100 : 0}%` }}
-                  />
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -710,8 +733,8 @@ const PianoChordTeacher = () => {
         </div>
 
         <div className="relative h-64 mb-8 overflow-hidden border border-gray-600 rounded-md bg-black shadow-lg">
-          {/* Piano container */}
-          <div className="relative flex h-full w-full">
+          {/* Piano container with fixed dimensions to prevent layout shifts */}
+          <div className="relative flex h-full w-full" style={{ minHeight: "14rem" }}>
             {/* First, render all white keys */}
             {notes.filter(note => !note.isBlack).map((whiteNote, index, whiteKeysArray) => {
               const isActive = activeNotes.includes(whiteNote.note);
@@ -730,11 +753,13 @@ const PianoChordTeacher = () => {
                       isActive
                         ? 'bg-indigo-300'
                         : isInChord
-                          ? 'bg-indigo-100'
+                          ? 'bg-indigo-200'
                           : 'bg-white hover:bg-gray-100'
                     }`}
                   >
-                    <span className="text-xs font-semibold text-gray-600">{whiteNote.note}</span>
+                    <span className={`text-xs font-semibold ${isInChord ? 'text-indigo-700' : 'text-gray-600'}`}>
+                      {whiteNote.note}
+                    </span>
                   </button>
                 </div>
               );
