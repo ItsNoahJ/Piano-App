@@ -304,6 +304,8 @@ const PianoChordTeacher = () => {
   const [playbackTempo, setPlaybackTempo] = useState(120); // Default tempo: 120 BPM
   
   const currentSequenceRef = useRef<Tone.Sequence | null>(null);
+  // Add a ref to track chord cleanup timeout
+  const chordTimeoutRef = useRef<number | null>(null);
 
   // Timeline Sequencer state
   const [timelineItems, setTimelineItems] = useState<Array<SequenceItem | null>>([null, null, null, null]); // 4 slots
@@ -422,6 +424,11 @@ const PianoChordTeacher = () => {
         currentSequenceRef.current.dispose();
         currentSequenceRef.current = null;
       }
+      // Clean up chord timeout
+      if (chordTimeoutRef.current !== null) {
+        clearTimeout(chordTimeoutRef.current);
+        chordTimeoutRef.current = null;
+      }
       // Clean up timeline playback
       if (timelineSequenceRef.current) {
         clearTimeout(timelineSequenceRef.current);
@@ -529,6 +536,19 @@ const PianoChordTeacher = () => {
         return;
       }
       
+      // If a chord is currently playing, stop it
+      if (isPlaying) {
+        // Cancel the cleanup timeout for any playing chord
+        if (chordTimeoutRef.current !== null) {
+          clearTimeout(chordTimeoutRef.current);
+          chordTimeoutRef.current = null;
+        }
+        
+        // Release all currently playing notes
+        synth.releaseAll();
+        setIsPlaying(false);
+      }
+      
       let formattedNote = note;
       // Convert flat notation (if any) to sharp for Tone.js
       if (note.includes('b')) {
@@ -579,7 +599,17 @@ const PianoChordTeacher = () => {
   useEffect(() => {
     // When switching interfaces, clear active notes
     setActiveNotes([]);
-  }, [showScalesInterface]);
+    // Stop any playing chord
+    if (synth && isPlaying) {
+      synth.releaseAll();
+      setIsPlaying(false);
+    }
+    // Clear chord timeout
+    if (chordTimeoutRef.current !== null) {
+      clearTimeout(chordTimeoutRef.current);
+      chordTimeoutRef.current = null;
+    }
+  }, [showScalesInterface, synth, isPlaying]);
 
   // Fix keyboard movement by adding a fixed height to the container
   useEffect(() => {
@@ -605,6 +635,18 @@ const PianoChordTeacher = () => {
         return;
       }
       
+      // Stop any currently playing chord
+      if (isPlaying) {
+        // Cancel the cleanup timeout for the previous chord
+        if (chordTimeoutRef.current !== null) {
+          clearTimeout(chordTimeoutRef.current);
+          chordTimeoutRef.current = null;
+        }
+        
+        // Stop all currently playing notes
+        synth.releaseAll();
+      }
+      
       setIsPlaying(true);
       
       // Clear any old active notes first
@@ -615,7 +657,7 @@ const PianoChordTeacher = () => {
       // Make sure we have valid notes before attempting to play
       if (chordNotes.length > 0) {
         // Play chord notes with a slight arpeggio effect
-        const noteDelay = 0.1; // seconds between notes
+        const noteDelay = 0.05; // seconds between notes (using the faster timing from previous change)
         
         chordNotes.forEach((note, index) => {
           try {
@@ -636,10 +678,12 @@ const PianoChordTeacher = () => {
         });
       }
       
-      setTimeout(() => {
+      // Store the timeout reference so it can be cancelled if needed
+      chordTimeoutRef.current = window.setTimeout(() => {
         setActiveNotes([]);
         setIsPlaying(false);
-      }, 1500);
+        chordTimeoutRef.current = null;
+      }, 1000); // Using the 1000ms timing from previous change
     } catch (error) {
       console.error("Error playing chord:", error);
       setIsPlaying(false);
@@ -702,6 +746,18 @@ const PianoChordTeacher = () => {
     }
     Tone.Transport.cancel(); // Clear any scheduled transport events
     Tone.Transport.stop();   // Stop the transport before starting a new one
+    
+    // Stop any currently playing chord
+    if (isPlaying) {
+      // Cancel the cleanup timeout for the previous chord
+      if (chordTimeoutRef.current !== null) {
+        clearTimeout(chordTimeoutRef.current);
+        chordTimeoutRef.current = null;
+      }
+      
+      // Stop all currently playing notes
+      synth.releaseAll();
+    }
 
     try {
       setIsPlaying(true);
