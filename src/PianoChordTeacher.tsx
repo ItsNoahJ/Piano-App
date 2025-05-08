@@ -701,6 +701,23 @@ const PianoChordTeacher = () => {
     setActiveNotes([]);
   };
 
+  // Helper function to find the next empty slot in the timeline
+  const findNextEmptySlot = (): number => {
+    const emptySlotIndex = timelineItems.findIndex(item => item === null);
+    return emptySlotIndex >= 0 ? emptySlotIndex : -1; // Return -1 if no empty slot found
+  };
+
+  // Helper function to add current selection to the next available slot
+  const addToNextEmptySlot = () => {
+    const nextEmptySlot = findNextEmptySlot();
+    if (nextEmptySlot !== -1) {
+      addCurrentSelectionToTimeline(nextEmptySlot);
+    } else {
+      // Optional: Could display a message to the user that all slots are full
+      console.warn("No empty slots available in timeline");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
       <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-lg p-6">
@@ -908,6 +925,24 @@ const PianoChordTeacher = () => {
                     </div>
                   </div>
                 </div>
+
+                {/* Add to Timeline Button */}
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={addToNextEmptySlot}
+                    disabled={isTimelineSequencePlaying}
+                    className={`px-4 py-2 rounded-md flex items-center transition-colors ${
+                      isTimelineSequencePlaying
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                    </svg>
+                    Add to Timeline
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -959,6 +994,24 @@ const PianoChordTeacher = () => {
                   </span>
                 );
               })}
+            </div>
+            
+            {/* Add to Timeline Button for Chords */}
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={addToNextEmptySlot}
+                disabled={isTimelineSequencePlaying}
+                className={`px-4 py-2 rounded-md flex items-center transition-colors ${
+                  isTimelineSequencePlaying
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                </svg>
+                Add to Timeline
+              </button>
             </div>
           </div>
         )}
@@ -1053,87 +1106,6 @@ const PianoChordTeacher = () => {
           </div>
         </div>
 
-        <div className="bg-gray-100 p-6 rounded-lg">
-          <h3 className="text-xl font-semibold mb-3 text-gray-800">Keyboard Controls</h3>
-          <p className="text-gray-600 mb-4">Play using your computer keyboard with piano-like layout:</p>
-          
-          {/* Visual piano keyboard layout */}
-          <div className="flex flex-col items-center mb-6">
-            {/* Black keys row */}
-            <div className="flex relative mb-2 gap-1">
-              <span className="text-sm font-medium text-gray-500 absolute -left-16 top-1/2 transform -translate-y-1/2">QWERTY Row:</span>
-              <div className="flex">
-                {/* Empty space for C and D positioning */}
-                <div className="w-7"></div>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">W</span>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">E</span>
-                <div className="w-7"></div>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">T</span>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">Y</span>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">U</span>
-                <div className="w-7"></div>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">O</span>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">P</span>
-                <div className="w-7"></div>
-                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">]</span>
-              </div>
-            </div>
-            
-            {/* Notes for black keys */}
-            <div className="flex relative mb-6 gap-1">
-              <div className="flex">
-                <div className="w-7"></div>
-                <span className="w-12 text-center text-sm font-medium mx-1">C#3</span>
-                <span className="w-12 text-center text-sm font-medium mx-1">D#3</span>
-                <div className="w-7"></div>
-                <span className="w-12 text-center text-sm font-medium mx-1">F#3</span>
-                <span className="w-12 text-center text-sm font-medium mx-1">G#3</span>
-                <span className="w-12 text-center text-sm font-medium mx-1">A#3</span>
-                <div className="w-7"></div>
-                <span className="w-12 text-center text-sm font-medium mx-1">C#4</span>
-                <span className="w-12 text-center text-sm font-medium mx-1">D#4</span>
-                <div className="w-7"></div>
-                <span className="w-12 text-center text-sm font-medium mx-1">F#4</span>
-              </div>
-            </div>
-            
-            {/* White keys row */}
-            <div className="flex relative mb-2">
-              <span className="text-sm font-medium text-gray-500 absolute -left-16 top-1/2 transform -translate-y-1/2">Home Row:</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">A</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">S</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">D</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">F</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">G</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">H</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">J</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">K</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">L</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">;</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">'</span>
-              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">\</span>
-            </div>
-            
-            {/* Notes for white keys */}
-            <div className="flex">
-              <span className="w-12 text-center text-sm font-medium mx-1">C3</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">D3</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">E3</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">F3</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">G3</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">A3</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">B3</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">C4</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">D4</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">E4</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">F4</span>
-              <span className="w-12 text-center text-sm font-medium mx-1">G4</span>
-            </div>
-          </div>
-          
-          <p className="text-gray-600 text-center font-medium">White keys on the home row (A-L), black keys on the row above (QWERTY)</p>
-        </div>
-        
         {/* Timeline Sequencer */}
         <div className="mb-8 p-4 bg-gray-50 rounded-lg shadow-sm timeline-sequencer">
           <h2 className="text-xl font-semibold mb-4 text-gray-800">Timeline Sequencer</h2>
@@ -1241,7 +1213,7 @@ const PianoChordTeacher = () => {
                       disabled={isTimelineSequencePlaying || 
                         (showScalesInterface && (!selectedRootNote || !selectedMode)) || 
                         (!showScalesInterface && !selectedChord)}
-                      className={`px-3 py-1 rounded-md transition-colors ${
+                      className={`w-10 h-10 rounded-full transition-colors flex items-center justify-center ${
                         isTimelineSequencePlaying || 
                         (showScalesInterface && (!selectedRootNote || !selectedMode)) || 
                         (!showScalesInterface && !selectedChord)
@@ -1249,7 +1221,9 @@ const PianoChordTeacher = () => {
                           : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
                       }`}
                     >
-                      Add Current Selection
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
                     </button>
                     <div className="text-gray-400 text-xs mt-2">Empty</div>
                   </div>
@@ -1257,6 +1231,87 @@ const PianoChordTeacher = () => {
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="bg-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-semibold mb-3 text-gray-800">Keyboard Controls</h3>
+          <p className="text-gray-600 mb-4">Play using your computer keyboard with piano-like layout:</p>
+          
+          {/* Visual piano keyboard layout */}
+          <div className="flex flex-col items-center mb-6">
+            {/* Black keys row */}
+            <div className="flex relative mb-2 gap-1">
+              <span className="text-sm font-medium text-gray-500 absolute -left-16 top-1/2 transform -translate-y-1/2">QWERTY Row:</span>
+              <div className="flex">
+                {/* Empty space for C and D positioning */}
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">W</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">E</span>
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">T</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">Y</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">U</span>
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">O</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">P</span>
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">]</span>
+              </div>
+            </div>
+            
+            {/* Notes for black keys */}
+            <div className="flex relative mb-6 gap-1">
+              <div className="flex">
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">C#3</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">D#3</span>
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">F#3</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">G#3</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">A#3</span>
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">C#4</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">D#4</span>
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">F#4</span>
+              </div>
+            </div>
+            
+            {/* White keys row */}
+            <div className="flex relative mb-2">
+              <span className="text-sm font-medium text-gray-500 absolute -left-16 top-1/2 transform -translate-y-1/2">Home Row:</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">A</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">S</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">D</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">F</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">G</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">H</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">J</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">K</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">L</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">;</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">'</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">\</span>
+            </div>
+            
+            {/* Notes for white keys */}
+            <div className="flex">
+              <span className="w-12 text-center text-sm font-medium mx-1">C3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">D3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">E3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">F3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">G3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">A3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">B3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">C4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">D4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">E4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">F4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">G4</span>
+            </div>
+          </div>
+          
+          <p className="text-gray-600 text-center font-medium">White keys on the home row (A-L), black keys on the row above (QWERTY)</p>
         </div>
       </div>
     </div>
