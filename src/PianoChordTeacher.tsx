@@ -746,8 +746,8 @@ const PianoChordTeacher = () => {
           // Schedule the next note
           noteIndex++;
           // Calculate next note delay based on tempo (60000ms / bpm = ms per quarter note)
-          // For 8th notes, divide by 2
-          const noteDelay = (60000 / playbackTempo) / 2;
+          // For 16th notes, divide by 4 (faster playback)
+          const noteDelay = (60000 / playbackTempo) / 4;
           setTimeout(playNextNote, noteDelay);
         } else {
           // Done playing
@@ -907,7 +907,7 @@ const PianoChordTeacher = () => {
         
         if (item.type === 'chord') {
           // Play chord with slight arpeggio
-          const noteDelay = 0.1; // seconds between notes
+          const noteDelay = 0.05; // Reduced from 0.1 to 0.05 seconds between notes for faster chord arpeggio
           
           notes.forEach((note, index) => {
             try {
@@ -922,11 +922,11 @@ const PianoChordTeacher = () => {
           // Update UI to show active notes
           setActiveNotes(notes);
           
-          // Resolve after chord finishes
+          // Resolve after chord finishes - shorter wait time for better flow
           setTimeout(() => {
             setActiveNotes([]);
             resolve();
-          }, 1500);
+          }, 1000); // Reduced from 1500ms to 1000ms for better flow between items
         } else {
           // Play scale sequentially
           let noteIndex = 0;
@@ -942,14 +942,14 @@ const PianoChordTeacher = () => {
                 
                 // Schedule the next note
                 noteIndex++;
-                // Calculate next note delay based on tempo
-                const noteDelay = (60000 / itemTempo) / 2;
+                // Calculate next note delay based on tempo - use 16th notes for more fluid playback
+                const noteDelay = (60000 / itemTempo) / 4; // Changed from division by 2 (8th notes) to 4 (16th notes)
                 setTimeout(playNextNote, noteDelay);
               } catch (noteError) {
                 console.error(`Error playing note in timeline scale:`, noteError);
                 // Skip to next note
                 noteIndex++;
-                setTimeout(playNextNote, 100);
+                setTimeout(playNextNote, 50); // Reduced from 100ms to 50ms for error recovery
               }
             } else {
               // Done playing this item
