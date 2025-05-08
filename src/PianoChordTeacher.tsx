@@ -113,30 +113,43 @@ const PianoChordTeacher = () => {
   const generateNotes = (): Note[] => {
     const notes: Note[] = [];
     const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    const keyboardKeys = [
-      ['s', 'e', 'd', 'f', 't', 'g', 'y', 'h', 'u', 'j', 'k', 'o'], // Octave 2 (starting from D)
-      ['l', 'p', ';', "'", ']', '\\', 'z', 'x', 'c', 'v', 'b', 'n'], // Octave 3
-      ['m', ',', '.', '/', '['] // Octave 4 (partial)
-    ];
+    
+    // New piano-like keyboard mapping
+    // Home row (ASDF row): white keys
+    // QWERTY row: black keys
+    const whiteKeyMap = {
+      'a': 'C3', 's': 'D3', 'd': 'E3', 'f': 'F3', 'g': 'G3', 'h': 'A3', 'j': 'B3',
+      'k': 'C4', 'l': 'D4', ';': 'E4', "'": 'F4', '\\': 'G4'
+    };
+    
+    const blackKeyMap = {
+      'w': 'C#3', 'e': 'D#3', 't': 'F#3', 'y': 'G#3', 'u': 'A#3',
+      'o': 'C#4', 'p': 'D#4', ']': 'F#4'
+    };
 
-    // Generate octaves of notes
-    for (let octave = 2; octave <= 4; octave++) {
-      const keysToUse = keyboardKeys[octave - 2];
-      const notesToGenerate = octave === 4 ? 5 : 12; // Only generate 5 notes for octave 4
-      
-      const startIndex = octave === 2 ? 2 : 0; // Start from D for octave 2 (skipping C, C#)
-      
-      for (let i = 0; i < notesToGenerate; i++) {
-        const noteIndex = startIndex + i >= 12 ? (startIndex + i) % 12 : startIndex + i;
-        const isBlack = noteNames[noteIndex].includes('#');
-        notes.push({
-          note: `${noteNames[noteIndex]}${octave}`,
-          key: keysToUse[i],
-          isBlack,
-          octave,
-        });
-      }
-    }
+    // Create white key notes
+    Object.entries(whiteKeyMap).forEach(([key, noteWithOctave]) => {
+      const noteName = noteWithOctave.slice(0, -1); // Remove octave
+      const octave = parseInt(noteWithOctave.slice(-1));
+      notes.push({
+        note: noteWithOctave,
+        key: key,
+        isBlack: false,
+        octave
+      });
+    });
+
+    // Create black key notes
+    Object.entries(blackKeyMap).forEach(([key, noteWithOctave]) => {
+      const noteName = noteWithOctave.slice(0, -1); // Remove octave
+      const octave = parseInt(noteWithOctave.slice(-1));
+      notes.push({
+        note: noteWithOctave,
+        key: key,
+        isBlack: true,
+        octave
+      });
+    });
 
     return notes;
   };
@@ -251,8 +264,10 @@ const PianoChordTeacher = () => {
       }
       
       const key = e.key.toLowerCase();
-      const note = notes.find((n) => n.key === key);
+      const note = notes.find((n) => n.key.toLowerCase() === key);
+      
       if (note && !activeNotes.includes(note.note)) {
+        console.log(`Key pressed: ${key}, playing note: ${note.note}`);
         playNote(note.note);
       }
     };
@@ -779,18 +794,85 @@ const PianoChordTeacher = () => {
           </div>
         </div>
 
-        <div className="bg-gray-100 p-4 rounded-lg">
-          <h3 className="text-lg font-semibold mb-2 text-gray-800">Keyboard Controls</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-            {notes.map((note) => (
-              <div key={note.note} className="flex items-center gap-2">
-                <span className={`px-2 py-1 rounded font-mono text-sm ${note.isBlack ? 'bg-gray-800 text-white' : 'bg-white border border-gray-300'}`}>
-                  {note.key}
-                </span>
-                <span className="text-gray-700">{note.note}</span>
+        <div className="bg-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-semibold mb-3 text-gray-800">Keyboard Controls</h3>
+          <p className="text-gray-600 mb-4">Play using your computer keyboard with piano-like layout:</p>
+          
+          {/* Visual piano keyboard layout */}
+          <div className="flex flex-col items-center mb-6">
+            {/* Black keys row */}
+            <div className="flex relative mb-2 gap-1">
+              <span className="text-sm font-medium text-gray-500 absolute -left-16 top-1/2 transform -translate-y-1/2">QWERTY Row:</span>
+              <div className="flex">
+                {/* Empty space for C and D positioning */}
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">W</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">E</span>
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">T</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">Y</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">U</span>
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">O</span>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">P</span>
+                <div className="w-7"></div>
+                <span className="w-12 h-12 rounded-md bg-gray-800 text-white flex items-center justify-center text-lg font-bold mx-1">]</span>
               </div>
-            ))}
+            </div>
+            
+            {/* Notes for black keys */}
+            <div className="flex relative mb-6 gap-1">
+              <div className="flex">
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">C#3</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">D#3</span>
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">F#3</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">G#3</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">A#3</span>
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">C#4</span>
+                <span className="w-12 text-center text-sm font-medium mx-1">D#4</span>
+                <div className="w-7"></div>
+                <span className="w-12 text-center text-sm font-medium mx-1">F#4</span>
+              </div>
+            </div>
+            
+            {/* White keys row */}
+            <div className="flex relative mb-2">
+              <span className="text-sm font-medium text-gray-500 absolute -left-16 top-1/2 transform -translate-y-1/2">Home Row:</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">A</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">S</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">D</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">F</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">G</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">H</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">J</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">K</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">L</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">;</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">'</span>
+              <span className="w-12 h-12 rounded-md bg-white border-2 border-gray-300 flex items-center justify-center text-lg font-bold mx-1">\</span>
+            </div>
+            
+            {/* Notes for white keys */}
+            <div className="flex">
+              <span className="w-12 text-center text-sm font-medium mx-1">C3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">D3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">E3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">F3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">G3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">A3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">B3</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">C4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">D4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">E4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">F4</span>
+              <span className="w-12 text-center text-sm font-medium mx-1">G4</span>
+            </div>
           </div>
+          
+          <p className="text-gray-600 text-center font-medium">White keys on the home row (A-L), black keys on the row above (QWERTY)</p>
         </div>
       </div>
     </div>
