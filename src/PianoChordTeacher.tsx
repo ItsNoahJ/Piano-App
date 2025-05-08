@@ -164,12 +164,12 @@ const PianoChordTeacher = () => {
     { name: 'A Minor', notes: ['A3', 'C4', 'E4'], description: 'The A minor chord consists of A, C, and E notes.' },
     { name: 'D Minor', notes: ['D3', 'F3', 'A3'], description: 'The D minor chord consists of D, F, and A notes.' },
     { name: 'E Minor', notes: ['E3', 'G3', 'B3'], description: 'The E minor chord consists of E, G, and B notes.' },
-    { name: 'C Major (Lower)', notes: ['C2', 'E2', 'G2'], description: 'The C major chord in a lower octave.' },
-    { name: 'G Major (Lower)', notes: ['G2', 'B2', 'D3'], description: 'The G major chord in a lower octave.' },
+    { name: 'C7', notes: ['C3', 'E3', 'G3', 'A#3'], description: 'The C dominant 7th chord adds a flatted 7th to the C major chord.' },
+    { name: 'Gsus4', notes: ['G3', 'C4', 'D4'], description: 'The G suspended 4th chord replaces the 3rd with a 4th for an unresolved sound.' },
     { name: 'D Major', notes: ['D3', 'F#3', 'A3'], description: 'The D major chord consists of D, F#, and A notes.' },
     { name: 'A Major', notes: ['A3', 'C#4', 'E4'], description: 'The A major chord consists of A, C#, and E notes.' }, 
     { name: 'B Minor', notes: ['B3', 'D4', 'F#4'], description: 'The B minor chord consists of B, D, and F# notes.' },
-    { name: 'G Minor', notes: ['G3', 'Bb3', 'D4'], description: 'The G minor chord consists of G, Bb, and D notes.' },
+    { name: 'G Minor', notes: ['G3', 'A#3', 'D4'], description: 'The G minor chord consists of G, Bb (A#), and D notes.' },
   ];
 
   // Add this helper function for volume compensation based on note
@@ -199,21 +199,71 @@ const PianoChordTeacher = () => {
     }
     
     try {
-      console.log("Playing note:", note);
-      const velocity = getNoteVelocity(note);
-      console.log(`Note ${note} velocity: ${velocity}`);
-      synth.triggerAttackRelease(note, '8n', undefined, velocity);
+      // Validate note format
+      if (!note || typeof note !== 'string') {
+        console.error("Invalid note format:", note);
+        return;
+      }
+      
+      let formattedNote = note;
+      // Convert flat notation (if any) to sharp for Tone.js
+      if (note.includes('b')) {
+        // Map of flats to their enharmonic sharp equivalents
+        const flatToSharp: Record<string, string> = {
+          'Bb': 'A#', 'Db': 'C#', 'Eb': 'D#', 'Gb': 'F#', 'Ab': 'G#'
+        };
+        
+        // Extract note name without octave
+        const noteName = note.substring(0, note.length - 1);
+        const octave = note.substring(note.length - 1);
+        
+        // Replace with sharp equivalent if it exists
+        if (flatToSharp[noteName]) {
+          formattedNote = `${flatToSharp[noteName]}${octave}`;
+          console.log(`Converted ${note} to ${formattedNote} for Tone.js compatibility`);
+        }
+      }
+      
+      // Parse note to ensure it's in the correct format for Tone.js
+      // Note should match pattern like "C4", "F#3", etc.
+      const notePattern = /^([A-G][#]?)(\d)$/;
+      const noteMatch = formattedNote.match(notePattern);
+      
+      if (!noteMatch) {
+        console.error(`Note format error: ${note} (formatted as ${formattedNote}) doesn't match expected pattern ${notePattern}`);
+        return;
+      }
+      
+      console.log("Playing note:", formattedNote);
+      const velocity = getNoteVelocity(formattedNote);
+      
+      // Try to play the note
+      synth.triggerAttackRelease(formattedNote, '8n', undefined, velocity);
       
       // Create a new array for activeNotes instead of modifying the existing one
-      setActiveNotes(prev => [...prev, note]);
+      setActiveNotes(prev => [...prev, note]); // Keep original note name in activeNotes for UI highlighting
       
       setTimeout(() => {
         setActiveNotes(prev => prev.filter(n => n !== note));
       }, 300);
     } catch (error) {
-      console.error("Error playing note:", error);
+      console.error("Error playing note:", note, error);
     }
   };
+
+  // Make sure piano keyboard is updated when switching between chord and scale modes
+  useEffect(() => {
+    // When switching interfaces, clear active notes
+    setActiveNotes([]);
+  }, [showScalesInterface]);
+
+  // Fix keyboard movement by adding a fixed height to the container
+  useEffect(() => {
+    // Reset active notes when changing modes, chords, or scales
+    return () => {
+      setActiveNotes([]);
+    };
+  }, [selectedChord, selectedRootNote, selectedMode]);
 
   // Play a chord
   const playChord = (chordNotes: string[]) => {
@@ -387,71 +437,6 @@ const PianoChordTeacher = () => {
       return selectedChord?.notes.includes(note) || false;
     }
   };
-
-  // Helper function to render black keys
-  const renderBlackKeys = (noteName: string) => {
-    const blackKeys = notes.filter(note => note.isBlack && note.note.startsWith(noteName));
-    const whiteKeys = notes.filter(note => !note.isBlack);
-    const totalWhiteKeys = whiteKeys.length;
-    
-    return blackKeys.map(blackKey => {
-      const octave = parseInt(blackKey.note.slice(-1));
-      const isActive = activeNotes.includes(blackKey.note);
-      const isInChord = isNoteInSelectedChord(blackKey.note);
-      
-      // Find position based on preceding white key
-      const baseName = noteName.charAt(0); // Get the base note (C from C#)
-      const precedingWhiteKey = whiteKeys.find(
-        note => note.note.charAt(0) === baseName && parseInt(note.note.slice(-1)) === octave
-      );
-      
-      if (!precedingWhiteKey) return null;
-      
-      // Calculate position
-      const whiteKeyIndex = whiteKeys.indexOf(precedingWhiteKey);
-      const position = (whiteKeyIndex / totalWhiteKeys) * 100 + 0.65 * (100 / totalWhiteKeys);
-      
-      return (
-        <button
-          key={blackKey.note}
-          onClick={(e) => {
-            e.stopPropagation();
-            playNote(blackKey.note);
-          }}
-          className={`absolute h-3/5 rounded-b-md z-10 transition-colors pointer-events-auto shadow-md border-x border-b ${
-            isActive
-              ? 'bg-indigo-700 border-indigo-900'
-              : isInChord
-                ? 'bg-indigo-800 border-indigo-900 shadow-inner'
-                : 'bg-gray-800 hover:bg-gray-700 border-gray-800'
-          }`}
-          style={{ 
-            left: `${position}%`,
-            width: `${0.65 * (100 / totalWhiteKeys)}%`,
-            top: 0
-          }}
-        >
-          <span className="text-xs font-semibold text-white absolute bottom-2 left-0 right-0 text-center">
-            {blackKey.note}
-          </span>
-        </button>
-      );
-    });
-  };
-
-  // Make sure piano keyboard is updated when switching between chord and scale modes
-  useEffect(() => {
-    // When switching interfaces, clear active notes
-    setActiveNotes([]);
-  }, [showScalesInterface]);
-
-  // Fix keyboard movement by adding a fixed height to the container
-  useEffect(() => {
-    // Reset active notes when changing modes, chords, or scales
-    return () => {
-      setActiveNotes([]);
-    };
-  }, [selectedChord, selectedRootNote, selectedMode]);
 
   return (
     <div className="min-h-screen bg-gray-100 py-8 px-4">
@@ -726,19 +711,6 @@ const PianoChordTeacher = () => {
                 );
               })}
             </div>
-            
-            <div className="flex items-center mt-4">
-              <button
-                onClick={() => playChord(selectedChord.notes)}
-                disabled={isPlaying || !isToneInitialized}
-                className={`px-4 py-2 rounded-md ${isPlaying || !isToneInitialized
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-                }`}
-              >
-                {isPlaying ? 'Playing...' : 'Play Chord'}
-              </button>
-            </div>
           </div>
         )}
 
@@ -771,6 +743,7 @@ const PianoChordTeacher = () => {
                           ? 'bg-indigo-200'
                           : 'bg-white hover:bg-gray-100'
                     }`}
+                    data-note={whiteNote.note}
                   >
                     <span className={`text-xs font-semibold ${isInChord ? 'text-indigo-700' : 'text-gray-600'}`}>
                       {whiteNote.note}
@@ -781,16 +754,53 @@ const PianoChordTeacher = () => {
             })}
             
             {/* Now render all black keys as an overlay */}
-            {/* C# */}
-            {renderBlackKeys('C#')}
-            {/* D# */}
-            {renderBlackKeys('D#')}
-            {/* F# */}
-            {renderBlackKeys('F#')}
-            {/* G# */}
-            {renderBlackKeys('G#')}
-            {/* A# */}
-            {renderBlackKeys('A#')}
+            {/* Instead of using renderBlackKeys, directly render all black keys */}
+            {notes.filter(note => note.isBlack).map(blackKey => {
+              const isActive = activeNotes.includes(blackKey.note);
+              const isInChord = isNoteInSelectedChord(blackKey.note);
+              const octave = parseInt(blackKey.note.slice(-1));
+              const noteLetter = blackKey.note.charAt(0);
+              
+              // Find the corresponding white key for positioning
+              const whiteKeys = notes.filter(note => !note.isBlack);
+              const precedingWhiteKey = whiteKeys.find(
+                note => note.note.charAt(0) === noteLetter && note.note.includes(octave.toString())
+              );
+              
+              if (!precedingWhiteKey) {
+                console.warn(`Could not find preceding white key for ${blackKey.note}`);
+                return null;
+              }
+              
+              // Calculate position
+              const whiteKeyIndex = whiteKeys.indexOf(precedingWhiteKey);
+              const totalWhiteKeys = whiteKeys.length;
+              const position = (whiteKeyIndex / totalWhiteKeys) * 100 + 0.65 * (100 / totalWhiteKeys);
+              
+              return (
+                <button
+                  key={blackKey.note}
+                  onClick={() => playNote(blackKey.note)}
+                  className={`absolute h-3/5 rounded-b-md z-10 transition-colors pointer-events-auto shadow-md border-x border-b ${
+                    isActive
+                      ? 'bg-indigo-700 border-indigo-900'
+                      : isInChord
+                        ? 'bg-indigo-800 border-indigo-900 shadow-inner'
+                        : 'bg-gray-800 hover:bg-gray-700 border-gray-800'
+                  }`}
+                  style={{ 
+                    left: `${position}%`,
+                    width: `${0.65 * (100 / totalWhiteKeys)}%`,
+                    top: 0
+                  }}
+                  data-note={blackKey.note}
+                >
+                  <span className="text-xs font-semibold text-white absolute bottom-2 left-0 right-0 text-center">
+                    {blackKey.note}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
