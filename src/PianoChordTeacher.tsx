@@ -562,10 +562,6 @@ const PianoChordTeacher = () => {
                 <button
                   onClick={() => {
                     setPlaybackPattern('ascending');
-                    if (selectedRootNote && selectedMode && currentScale.length > 0) {
-                      // Use a small delay to ensure state is updated before playing
-                      setTimeout(() => playScale(currentScale), 100);
-                    }
                   }}
                   className={`px-4 py-2 rounded-md transition-colors ${
                     playbackPattern === 'ascending'
@@ -578,10 +574,6 @@ const PianoChordTeacher = () => {
                 <button
                   onClick={() => {
                     setPlaybackPattern('descending');
-                    if (selectedRootNote && selectedMode && currentScale.length > 0) {
-                      // Use a small delay to ensure state is updated before playing
-                      setTimeout(() => playScale(currentScale), 100);
-                    }
                   }}
                   className={`px-4 py-2 rounded-md transition-colors ${
                     playbackPattern === 'descending'
@@ -594,10 +586,6 @@ const PianoChordTeacher = () => {
                 <button
                   onClick={() => {
                     setPlaybackPattern('both');
-                    if (selectedRootNote && selectedMode && currentScale.length > 0) {
-                      // Use a small delay to ensure state is updated before playing
-                      setTimeout(() => playScale(currentScale), 100);
-                    }
                   }}
                   className={`px-4 py-2 rounded-md transition-colors ${
                     playbackPattern === 'both'
@@ -610,54 +598,52 @@ const PianoChordTeacher = () => {
               </div>
             </div>
             
-            {/* Add Tempo Control */}
-            <div className="mb-6">
-              <h3 className="text-lg font-medium mb-2 text-gray-700">5. Tempo (BPM):</h3>
-              <div className="flex items-center space-x-4">
-                <input
-                  type="range"
-                  min="60"
-                  max="240"
-                  step="10"
-                  value={playbackTempo}
-                  onChange={(e) => {
-                    const newTempo = parseInt(e.target.value);
-                    setPlaybackTempo(newTempo);
-                    // If we have a scale selected, play it with the new tempo after a small delay
-                    if (selectedRootNote && selectedMode && currentScale.length > 0 && !isPlaying) {
-                      setTimeout(() => playScale(currentScale), 100);
-                    }
-                  }}
-                  className="w-48"
-                />
-                <span className="text-gray-700 w-12">{playbackTempo}</span>
-              </div>
-            </div>
-            
-            {/* Scale Information Display */}
+            {/* Scale Information Display - Tempo controls will be moved here */}
             {selectedRootNote && selectedMode && currentScale.length > 0 && (
               <div className="mb-8 p-4 bg-indigo-50 rounded-lg">
-                <h3 className="text-xl font-semibold text-indigo-700">
+                <h3 className="text-xl font-semibold text-indigo-700 mb-4">
                   {formatScaleName(selectedRootNote, selectedMode)}
                 </h3>
                 
-                <div className="mt-3 flex flex-wrap gap-2 items-center">
-                  <span className="text-gray-600">Notes:</span>
-                  {currentScale.map((note, index) => {
-                    const isHighlighted = activeNotes.includes(note);
-                    return (
-                      <span 
-                        key={note} 
-                        className={`font-mono px-2 py-1 rounded transition-colors border ${
-                          isHighlighted 
-                            ? 'bg-indigo-500 text-white border-indigo-500' 
-                            : 'bg-indigo-200 text-indigo-700 border-indigo-400'
-                        }`}
-                      >
-                        {note}
-                      </span>
-                    );
-                  })}
+                <div className="flex items-center"> {/* Changed to items-center for vertical alignment */}
+                  {/* Tempo Control Area - Moved to the left */}
+                  <div className="flex-shrink-0 mr-8"> {/* Added mr-8 for spacing */}
+                    <h3 className="text-lg font-medium mb-2 text-gray-700">Tempo (BPM):</h3>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="range"
+                        min="60"
+                        max="240"
+                        step="10"
+                        value={playbackTempo}
+                        onChange={(e) => setPlaybackTempo(parseInt(e.target.value))}
+                        className="w-36"
+                      />
+                      <span className="text-gray-700 w-10 text-sm">{playbackTempo}</span>
+                    </div>
+                  </div>
+
+                  {/* Notes Display Area */}
+                  <div className="flex-grow">
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span className="text-gray-600">Notes:</span>
+                      {currentScale.map((note) => {
+                        const isHighlighted = activeNotes.includes(note);
+                        return (
+                          <span 
+                            key={note} 
+                            className={`font-mono px-2 py-1 rounded transition-colors border ${
+                              isHighlighted 
+                                ? 'bg-indigo-500 text-white border-indigo-500' 
+                                : 'bg-indigo-200 text-indigo-700 border-indigo-400'
+                            }`}
+                          >
+                            {note}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
