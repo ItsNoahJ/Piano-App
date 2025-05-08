@@ -118,29 +118,95 @@
     2. ✅ **Visual Feedback:**
         - Added progress indicators for chord playback
 
-## Phase 5: Future Enhancements (Pending)
+## Phase 5: Timeline Sequencer (In Progress)
 
-### 5.1. Additional Scale Types
+### 5.1. Timeline UI Component
+- **Objective:** Create a visual timeline interface for arranging scales and chords in sequence.
+- **Tasks:**
+    1. **Timeline Container:**
+        - Implement horizontal container with 4 slots for arrangement
+        - Design visual representation of empty vs. filled slots
+        - Add slot labels and duration indicators
+    2. **Item Assignment:**
+        - Create mechanism to assign currently selected scale/chord to a timeline slot
+        - Implement "Clear" functionality for individual slots
+        - Add visual feedback when assigning items
+    3. **Timeline Controls:**
+        - Add master play/pause/stop buttons for the sequence
+        - Implement global tempo control affecting all items
+        - Add loop toggle option for continuous playback
+
+### 5.2. Sequence Data Management
+- **Objective:** Develop data structures and state management for the timeline feature.
+- **Tasks:**
+    1. **Data Model:**
+        - Define `SequenceItem` type supporting both scales and chords
+        - Implement `timelineItems` state array to store sequence
+        - Create unique identifiers for timeline items
+    2. **CRUD Operations:**
+        - Implement functions to add, update, delete and reorder timeline items
+        - Add persistence of timeline data using localStorage
+        - Create reset/clear all functionality
+    3. **Item Configuration:**
+        - Support per-item playback pattern (ascending/descending/both)
+        - Allow custom duration setting per timeline item
+        - Support optional per-item tempo overrides
+
+### 5.3. Playback Engine Enhancement
+- **Objective:** Extend the audio engine to support sequential playback of timeline items.
+- **Tasks:**
+    1. **Sequential Scheduler:**
+        - Implement Tone.js Transport scheduler for playing multiple items in sequence
+        - Create timing calculation based on item duration and tempo
+        - Add smooth transitions between sequence items
+    2. **Playback Control:**
+        - Implement play, pause, resume, and stop functionality
+        - Add progress tracking during playback
+        - Create event system for playback state changes
+    3. **Performance Optimization:**
+        - Pre-calculate and cache sequence timing for consistent playback
+        - Implement efficient note scheduling to avoid audio glitches
+        - Add buffer time between items for smoother transitions
+
+### 5.4. Visual Feedback System
+- **Objective:** Create visual feedback that synchronizes the timeline with piano keyboard.
+- **Tasks:**
+    1. **Position Indicator:**
+        - Implement progress bar showing current playback position in timeline
+        - Add visual indicator for currently active sequence item
+        - Create smooth animation for progress tracking
+    2. **Keyboard Synchronization:**
+        - Connect timeline playback to piano keyboard highlighting
+        - Ensure consistent visual feedback between timeline and piano
+        - Add optional "follow along" visualization
+    3. **Enhanced UI Feedback:**
+        - Implement timeline item highlighting during playback
+        - Add visual countdown before sequence starts
+        - Create animations for transitions between items
+
+## Phase 6: Future Enhancements (Pending)
+
+### 6.1. Additional Scale Types
 - **Objective:** Expand the available scale types for more comprehensive learning.
 - **Tasks:**
     1. Add exotic scales (Whole Tone, Diminished, etc.)
     2. Include more ethnic/cultural scales (Japanese, Indian, etc.)
 
-### 5.2. Enhanced Music Theory Features
+### 6.2. Enhanced Music Theory Features
 - **Objective:** Provide more advanced music theory concepts.
 - **Tasks:**
     1. Add chord progression suggestions based on selected scale
     2. Implement common cadence patterns
     3. Show scale degree functions and Roman numeral analysis
 
-### 5.3. Learning Features
+### 6.3. Learning Features
 - **Objective:** Add features that help users learn music theory concepts.
 - **Tasks:**
     1. Add interactive quizzes on scale recognition
     2. Implement ear training exercises
     3. Include chord progression exercises
 
-### 5.4. Performance Improvements
+### 6.4. Performance Improvements
 - **Objective:** Optimize app performance and audio handling.
 - **Tasks:**
     1. Improve Tone.js initialization and sample loading

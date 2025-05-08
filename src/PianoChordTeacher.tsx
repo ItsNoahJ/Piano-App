@@ -23,6 +23,19 @@ type Chord = {
 // Add this enum for playback patterns
 type PlaybackPattern = 'ascending' | 'descending' | 'both';
 
+// Timeline Sequencer types
+type SequenceItemType = 'chord' | 'scale';
+
+type SequenceItem = {
+  id: string;
+  type: SequenceItemType;
+  rootNote?: string;
+  mode?: string;
+  chord?: Chord;
+  playbackPattern: PlaybackPattern;
+  tempo?: number; // Optional tempo override
+};
+
 const PianoChordTeacher = () => {
   const [activeNotes, setActiveNotes] = useState<string[]>([]);
   const [selectedChord, setSelectedChord] = useState<Chord | null>(null);
@@ -40,6 +53,38 @@ const PianoChordTeacher = () => {
   const [playbackTempo, setPlaybackTempo] = useState(120); // Default tempo: 120 BPM
   
   const currentSequenceRef = useRef<Tone.Sequence | null>(null);
+
+  // Timeline Sequencer state
+  const [timelineItems, setTimelineItems] = useState<Array<SequenceItem | null>>([null, null, null, null]); // 4 slots
+  const [isTimelineSequencePlaying, setIsTimelineSequencePlaying] = useState(false);
+  const [currentTimelineIndex, setCurrentTimelineIndex] = useState<number | null>(null);
+  const timelineSequenceRef = useRef<any>(null);
+
+  // Load timeline items from localStorage on initial render
+  useEffect(() => {
+    try {
+      const savedItems = localStorage.getItem('pianoTeacherTimelineItems');
+      if (savedItems) {
+        const parsedItems = JSON.parse(savedItems);
+        // Validate the saved items
+        if (Array.isArray(parsedItems) && parsedItems.length === 4) {
+          setTimelineItems(parsedItems);
+          console.log('Loaded timeline items from localStorage');
+        }
+      }
+    } catch (error) {
+      console.error('Error loading timeline items from localStorage:', error);
+    }
+  }, []);
+
+  // Save timeline items to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem('pianoTeacherTimelineItems', JSON.stringify(timelineItems));
+    } catch (error) {
+      console.error('Error saving timeline items to localStorage:', error);
+    }
+  }, [timelineItems]);
 
   // Available modes for UI
   const availableModes = getAvailableModes();
@@ -103,9 +148,14 @@ const PianoChordTeacher = () => {
         currentSequenceRef.current.dispose();
         currentSequenceRef.current = null;
       }
+      // Clean up timeline playback
+      if (timelineSequenceRef.current) {
+        clearTimeout(timelineSequenceRef.current);
+        timelineSequenceRef.current = null;
+      }
       Tone.Transport.cancel();
       Tone.Transport.stop();
-      console.log("Tone.Transport stopped and sequence cleared on unmount");
+      console.log("Tone.Transport stopped and all sequences cleared on unmount");
     };
   }, [synth]);
 
@@ -436,6 +486,219 @@ const PianoChordTeacher = () => {
     } else {
       return selectedChord?.notes.includes(note) || false;
     }
+  };
+
+  // Timeline Sequencer Functions
+  const generateUniqueId = (): string => {
+    return Math.random().toString(36).substring(2, 9);
+  };
+
+  const addCurrentSelectionToTimeline = (slotIndex: number) => {
+    if (slotIndex < 0 || slotIndex >= timelineItems.length) {
+      console.error("Invalid slot index:", slotIndex);
+      return;
+    }
+
+    let newItem: SequenceItem;
+
+    if (showScalesInterface && selectedRootNote && selectedMode) {
+      // Create a scale item
+      newItem = {
+        id: generateUniqueId(),
+        type: 'scale',
+        rootNote: selectedRootNote,
+        mode: selectedMode,
+        playbackPattern: playbackPattern,
+        tempo: playbackTempo,
+      };
+    } else if (!showScalesInterface && selectedChord) {
+      // Create a chord item
+      newItem = {
+        id: generateUniqueId(),
+        type: 'chord',
+        chord: selectedChord,
+        playbackPattern: 'ascending', // Default for chords
+        tempo: playbackTempo,
+      };
+    } else {
+      console.warn("Cannot add to timeline: No valid selection");
+      return;
+    }
+
+    const newTimelineItems = [...timelineItems];
+    newTimelineItems[slotIndex] = newItem;
+    setTimelineItems(newTimelineItems);
+  };
+
+  const removeItemFromTimeline = (slotIndex: number) => {
+    if (slotIndex < 0 || slotIndex >= timelineItems.length) {
+      console.error("Invalid slot index:", slotIndex);
+      return;
+    }
+    
+    // Can't remove items during playback
+    if (isTimelineSequencePlaying) {
+      return;
+    }
+
+    const newTimelineItems = [...timelineItems];
+    newTimelineItems[slotIndex] = null;
+    setTimelineItems(newTimelineItems);
+  };
+
+  const clearAllTimelineItems = () => {
+    // Can't clear items during playback
+    if (isTimelineSequencePlaying) {
+      return;
+    }
+    
+    setTimelineItems([null, null, null, null]);
+  };
+
+  const getNotesForSequenceItem = (item: SequenceItem): string[] => {
+    if (item.type === 'scale' && item.rootNote && item.mode) {
+      // For scales, generate the notes based on rootNote and mode
+      const scaleNotes = getScaleNotes(item.rootNote, startingOctave, item.mode);
+      
+      // Apply the playback pattern
+      let notesToPlay: string[] = [];
+      switch (item.playbackPattern) {
+        case 'ascending':
+          notesToPlay = [...scaleNotes];
+          break;
+        case 'descending':
+          notesToPlay = [...scaleNotes].reverse();
+          break;
+        case 'both':
+          // For both, play ascending then descending but don't repeat the top note
+          notesToPlay = [...scaleNotes, ...[...scaleNotes].slice(0, -1).reverse()];
+          break;
+      }
+      
+      return notesToPlay;
+    } else if (item.type === 'chord' && item.chord) {
+      // For chords, just return the chord notes
+      return item.chord.notes;
+    }
+    
+    return [];
+  };
+
+  const playTimelineItem = (item: SequenceItem): Promise<void> => {
+    return new Promise((resolve) => {
+      if (!synth || !isToneInitialized) {
+        console.warn("Cannot play timeline item: Synth not initialized or Tone not ready");
+        resolve();
+        return;
+      }
+      
+      const notes = getNotesForSequenceItem(item);
+      if (notes.length === 0) {
+        console.warn("No notes to play for timeline item");
+        resolve();
+        return;
+      }
+      
+      // Set tempo for this item (use item-specific tempo if available)
+      const itemTempo = item.tempo || playbackTempo;
+      Tone.Transport.bpm.value = itemTempo;
+      
+      if (item.type === 'chord') {
+        // Play chord with slight arpeggio
+        const noteDelay = 0.1; // seconds between notes
+        
+        notes.forEach((note, index) => {
+          const velocity = getNoteVelocity(note);
+          const startTime = Tone.now() + (index * noteDelay);
+          synth.triggerAttackRelease(note, "2n", startTime, velocity);
+        });
+        
+        // Update UI to show active notes
+        setActiveNotes(notes);
+        
+        // Resolve after chord finishes
+        setTimeout(() => {
+          setActiveNotes([]);
+          resolve();
+        }, 1500);
+      } else {
+        // Play scale sequentially
+        let noteIndex = 0;
+        const playNextNote = () => {
+          if (noteIndex < notes.length) {
+            const note = notes[noteIndex];
+            // Highlight the current note
+            setActiveNotes([note]);
+            // Play the note
+            const velocity = getNoteVelocity(note);
+            synth.triggerAttackRelease(note, "8n", undefined, velocity);
+            
+            // Schedule the next note
+            noteIndex++;
+            // Calculate next note delay based on tempo
+            const noteDelay = (60000 / itemTempo) / 2;
+            setTimeout(playNextNote, noteDelay);
+          } else {
+            // Done playing this item
+            setActiveNotes([]);
+            resolve();
+          }
+        };
+        
+        // Start playing the sequence
+        playNextNote();
+      }
+    });
+  };
+
+  const playEntireTimeline = async () => {
+    // Don't start if already playing
+    if (isTimelineSequencePlaying) {
+      return;
+    }
+    
+    // Filter out empty slots
+    const validItems = timelineItems.filter(item => item !== null) as SequenceItem[];
+    
+    if (validItems.length === 0) {
+      console.warn("No valid items in timeline to play");
+      return;
+    }
+    
+    try {
+      setIsTimelineSequencePlaying(true);
+      
+      // Play each item in sequence
+      for (let i = 0; i < validItems.length; i++) {
+        // Update the current item index for UI feedback
+        setCurrentTimelineIndex(timelineItems.findIndex(item => item?.id === validItems[i].id));
+        
+        // Play the current item and wait for it to complete
+        await playTimelineItem(validItems[i]);
+      }
+    } catch (error) {
+      console.error("Error playing timeline:", error);
+    } finally {
+      setIsTimelineSequencePlaying(false);
+      setCurrentTimelineIndex(null);
+      setActiveNotes([]);
+    }
+  };
+
+  const stopTimelinePlayback = () => {
+    if (!isTimelineSequencePlaying) {
+      return;
+    }
+    
+    // Clear any timeout
+    if (timelineSequenceRef.current) {
+      clearTimeout(timelineSequenceRef.current);
+      timelineSequenceRef.current = null;
+    }
+    
+    setIsTimelineSequencePlaying(false);
+    setCurrentTimelineIndex(null);
+    setActiveNotes([]);
   };
 
   return (
@@ -869,6 +1132,131 @@ const PianoChordTeacher = () => {
           </div>
           
           <p className="text-gray-600 text-center font-medium">White keys on the home row (A-L), black keys on the row above (QWERTY)</p>
+        </div>
+        
+        {/* Timeline Sequencer */}
+        <div className="mb-8 p-4 bg-gray-50 rounded-lg shadow-sm timeline-sequencer">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Timeline Sequencer</h2>
+          
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+            <p className="text-gray-600 mb-2 md:mb-0">Arrange up to 4 scales or chords to play in sequence</p>
+            
+            <div className="flex space-x-2">
+              <button
+                onClick={playEntireTimeline}
+                disabled={isTimelineSequencePlaying || timelineItems.every(item => item === null)}
+                className={`px-4 py-2 rounded-md transition-colors flex items-center ${
+                  isTimelineSequencePlaying || timelineItems.every(item => item === null)
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-green-600 text-white hover:bg-green-700'
+                }`}
+              >
+                {/* Play icon */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clipRule="evenodd" />
+                </svg>
+                Play Sequence
+              </button>
+              
+              <button
+                onClick={stopTimelinePlayback}
+                disabled={!isTimelineSequencePlaying}
+                className={`px-4 py-2 rounded-md transition-colors flex items-center ${
+                  !isTimelineSequencePlaying
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-red-600 text-white hover:bg-red-700'
+                }`}
+              >
+                {/* Stop icon */}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1zm0 5a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" />
+                </svg>
+                Stop
+              </button>
+              
+              <button
+                onClick={clearAllTimelineItems}
+                disabled={isTimelineSequencePlaying || timelineItems.every(item => item === null)}
+                className={`px-4 py-2 rounded-md transition-colors ${
+                  isTimelineSequencePlaying || timelineItems.every(item => item === null)
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gray-600 text-white hover:bg-gray-700'
+                }`}
+              >
+                Clear All
+              </button>
+            </div>
+          </div>
+          
+          {/* Timeline Slots */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {timelineItems.map((item, index) => (
+              <div 
+                key={index}
+                className={`border rounded-md p-3 min-h-[120px] flex flex-col justify-between transition-colors ${
+                  currentTimelineIndex === index && isTimelineSequencePlaying
+                    ? 'border-indigo-500 bg-indigo-50'
+                    : item ? 'border-gray-300 bg-white' : 'border-dashed border-gray-300 bg-white'
+                }`}
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="text-gray-500 font-medium">Slot {index + 1}</div>
+                  {item ? (
+                    <button
+                      onClick={() => removeItemFromTimeline(index)}
+                      disabled={isTimelineSequencePlaying}
+                      className={`text-gray-400 hover:text-gray-600 ${isTimelineSequencePlaying ? 'cursor-not-allowed' : ''}`}
+                    >
+                      {/* X icon */}
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  ) : null}
+                </div>
+                
+                {item ? (
+                  <div className="text-center">
+                    {item.type === 'scale' && item.rootNote && item.mode ? (
+                      <div>
+                        <div className="font-medium text-indigo-800">{item.rootNote} {item.mode}</div>
+                        <div className="text-sm text-gray-600">{item.playbackPattern}</div>
+                        {item.tempo !== playbackTempo && (
+                          <div className="text-xs text-gray-500 mt-1">{item.tempo} BPM</div>
+                        )}
+                      </div>
+                    ) : item.type === 'chord' && item.chord ? (
+                      <div>
+                        <div className="font-medium text-indigo-800">{item.chord.name}</div>
+                        <div className="text-xs text-gray-500 mt-1">{item.chord.notes.join(', ')}</div>
+                      </div>
+                    ) : (
+                      <div className="text-gray-400">Invalid item</div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full">
+                    <button
+                      onClick={() => addCurrentSelectionToTimeline(index)}
+                      disabled={isTimelineSequencePlaying || 
+                        (showScalesInterface && (!selectedRootNote || !selectedMode)) || 
+                        (!showScalesInterface && !selectedChord)}
+                      className={`px-3 py-1 rounded-md transition-colors ${
+                        isTimelineSequencePlaying || 
+                        (showScalesInterface && (!selectedRootNote || !selectedMode)) || 
+                        (!showScalesInterface && !selectedChord)
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'
+                      }`}
+                    >
+                      Add Current Selection
+                    </button>
+                    <div className="text-gray-400 text-xs mt-2">Empty</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
