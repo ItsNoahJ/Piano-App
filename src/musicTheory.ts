@@ -73,6 +73,10 @@ export const getScaleNotes = (rootNote: string, octave: number, mode: string): s
     scaleNotes.push(`${note}${noteOctave}`);
   }
   
+  // Add the root note one octave higher as the 8th note
+  const rootNoteName = rootNote.replace(/\d+$/, ''); // Remove any existing octave number
+  scaleNotes.push(`${rootNoteName}${octave + 1}`);
+  
   return scaleNotes;
 };
 
