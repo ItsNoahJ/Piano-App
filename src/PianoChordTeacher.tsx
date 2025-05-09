@@ -530,7 +530,7 @@ const PianoChordTeacher = () => {
     }
     
     try {
-      // Validate note format
+      // Validate note format more strictly
       if (!note || typeof note !== 'string') {
         console.error("Invalid note format:", note);
         return;
@@ -547,6 +547,13 @@ const PianoChordTeacher = () => {
         // Release all currently playing notes
         synth.releaseAll();
         setIsPlaying(false);
+      }
+      
+      // More comprehensive note validation
+      const notePattern = /^([A-G][b#]?)(\d)$/;
+      if (!notePattern.test(note)) {
+        console.warn(`Invalid note format: "${note}". Note must be in format like "C4", "F#3", "Eb5".`);
+        return; // Don't try to play an invalid note
       }
       
       let formattedNote = note;
@@ -568,23 +575,25 @@ const PianoChordTeacher = () => {
         }
       }
       
-      // More flexible note pattern validation
-      // Notes should match patterns like "C4", "F#3", "Db5" etc.
-      const notePattern = /^([A-G][b#]?)(\d)$/;
-      const noteMatch = formattedNote.match(notePattern);
-      
-      if (!noteMatch) {
-        console.warn(`Potentially invalid note format: ${note} (formatted as ${formattedNote}). Attempting to play anyway.`);
-        // Continue execution - don't return, as we'll try to play it anyway
+      // Extract octave number and validate it's in a reasonable range
+      const octave = parseInt(formattedNote.slice(-1));
+      if (isNaN(octave) || octave < 0 || octave > 8) {
+        console.warn(`Octave out of reasonable range: ${octave} in note ${formattedNote}`);
+        return; // Don't try to play notes with extreme octaves
       }
       
       console.log("Playing note:", formattedNote);
       const velocity = getNoteVelocity(formattedNote);
       
-      // Try to play the note
-      synth.triggerAttackRelease(formattedNote, '8n', undefined, velocity);
+      // Try to play the note with better error handling
+      try {
+        synth.triggerAttackRelease(formattedNote, '8n', undefined, velocity);
+      } catch (playError) {
+        console.error(`Failed to play note ${formattedNote}:`, playError);
+        return; // Exit early if note can't be played
+      }
       
-      // Create a new array for activeNotes instead of modifying the existing one
+      // Only update UI if note playback was successful
       setActiveNotes(prev => [...prev, note]); // Keep original note name in activeNotes for UI highlighting
       
       setTimeout(() => {
@@ -592,6 +601,7 @@ const PianoChordTeacher = () => {
       }, 300);
     } catch (error) {
       console.error("Error playing note:", note, error);
+      // Don't update UI state if we hit an error
     }
   };
 
@@ -645,6 +655,7 @@ const PianoChordTeacher = () => {
         
         // Stop all currently playing notes
         synth.releaseAll();
+        setIsPlaying(false);
       }
       
       setIsPlaying(true);
@@ -757,6 +768,7 @@ const PianoChordTeacher = () => {
       
       // Stop all currently playing notes
       synth.releaseAll();
+      setIsPlaying(false);
     }
 
     try {
@@ -1257,73 +1269,108 @@ const PianoChordTeacher = () => {
                     </div>
                   </div>
                   
-                  {/* Scale Information Display - Tempo controls will be moved here */}
-                  {selectedRootNote && selectedMode && currentScale.length > 0 && (
-                    <div className="mb-8 p-4 bg-indigo-50 rounded-lg">
-                      <h3 className="text-xl font-semibold text-indigo-700 mb-4">
-                        {formatScaleName(selectedRootNote, selectedMode)}
-                      </h3>
-                      
-                      <div className="flex items-center"> {/* Changed to items-center for vertical alignment */}
-                        {/* Tempo Control Area - Moved to the left */}
-                        <div className="flex-shrink-0 mr-8"> {/* Added mr-8 for spacing */}
-                          <h3 className="text-lg font-medium mb-2 text-gray-700">Tempo (BPM):</h3>
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="range"
-                              min="60"
-                              max="240"
-                              step="10"
-                              value={playbackTempo}
-                              onChange={(e) => setPlaybackTempo(parseInt(e.target.value))}
-                              className="w-36"
-                            />
-                            <span className="text-gray-700 w-10 text-sm">{playbackTempo}</span>
+                  {/* Scale Information Display - always visible in scales mode */}
+                  <div className="mb-8 p-4 bg-indigo-50 rounded-lg">
+                    {selectedRootNote && selectedMode && currentScale.length > 0 ? (
+                      <>
+                        <h3 className="text-xl font-semibold text-indigo-700 mb-4">
+                          {formatScaleName(selectedRootNote, selectedMode)}
+                        </h3>
+                        
+                        <div className="flex items-center"> {/* Changed to items-center for vertical alignment */}
+                          {/* Tempo Control Area - Moved to the left */}
+                          <div className="flex-shrink-0 mr-8"> {/* Added mr-8 for spacing */}
+                            <h3 className="text-lg font-medium mb-2 text-gray-700">Tempo (BPM):</h3>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="range"
+                                min="60"
+                                max="240"
+                                step="10"
+                                value={playbackTempo}
+                                onChange={(e) => setPlaybackTempo(parseInt(e.target.value))}
+                                className="w-36"
+                              />
+                              <span className="text-gray-700 w-10 text-sm">{playbackTempo}</span>
+                            </div>
+                          </div>
+
+                          {/* Notes Display Area */}
+                          <div className="flex-grow">
+                            <div className="flex flex-wrap gap-2 items-center">
+                              <span className="text-gray-600">Notes:</span>
+                              {currentScale.map((note) => {
+                                const isHighlighted = activeNotes.includes(note);
+                                return (
+                                  <span 
+                                    key={note} 
+                                    className={`font-mono px-2 py-1 rounded transition-colors border ${
+                                      isHighlighted 
+                                        ? 'bg-indigo-500 text-white border-indigo-500' 
+                                        : 'bg-indigo-200 text-indigo-700 border-indigo-400'
+                                    }`}
+                                  >
+                                    {note}
+                                  </span>
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-semibold text-indigo-700 mb-4">
+                          Select a scale to learn
+                        </h3>
+                        
+                        <div className="flex items-center">
+                          {/* Tempo Control Area - Always visible */}
+                          <div className="flex-shrink-0 mr-8">
+                            <h3 className="text-lg font-medium mb-2 text-gray-700">Tempo (BPM):</h3>
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="range"
+                                min="60"
+                                max="240"
+                                step="10"
+                                value={playbackTempo}
+                                onChange={(e) => setPlaybackTempo(parseInt(e.target.value))}
+                                className="w-36"
+                              />
+                              <span className="text-gray-700 w-10 text-sm">{playbackTempo}</span>
+                            </div>
+                          </div>
 
-                        {/* Notes Display Area */}
-                        <div className="flex-grow">
-                          <div className="flex flex-wrap gap-2 items-center">
-                            <span className="text-gray-600">Notes:</span>
-                            {currentScale.map((note) => {
-                              const isHighlighted = activeNotes.includes(note);
-                              return (
-                                <span 
-                                  key={note} 
-                                  className={`font-mono px-2 py-1 rounded transition-colors border ${
-                                    isHighlighted 
-                                      ? 'bg-indigo-500 text-white border-indigo-500' 
-                                      : 'bg-indigo-200 text-indigo-700 border-indigo-400'
-                                  }`}
-                                >
-                                  {note}
-                                </span>
-                              );
-                            })}
+                          {/* Placeholder for notes */}
+                          <div className="flex-grow">
+                            <div className="flex flex-wrap gap-2 items-center">
+                              <span className="text-gray-600">Notes:</span>
+                              <span className="text-gray-500 italic">Complete the steps above to see scale notes</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
+                      </>
+                    )}
 
-                          {/* Add to Timeline Button */}
-                          <div className="mt-4 flex justify-end">
-                            <button
-                              onClick={addToNextEmptySlot}
-                              disabled={isTimelineSequencePlaying}
-                              className={`px-4 py-2 rounded-md flex items-center transition-colors ${
-                                isTimelineSequencePlaying
-                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                  : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                              }`}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                              </svg>
-                              Add to Timeline
-                            </button>
-                      </div>
+                    {/* Add to Timeline Button */}
+                    <div className="mt-4 flex justify-end">
+                      <button
+                        onClick={addToNextEmptySlot}
+                        disabled={isTimelineSequencePlaying || !(selectedRootNote && selectedMode && currentScale.length > 0)}
+                        className={`px-4 py-2 rounded-md flex items-center transition-colors ${
+                          isTimelineSequencePlaying || !(selectedRootNote && selectedMode && currentScale.length > 0)
+                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                        }`}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                        </svg>
+                        Add to Timeline
+                      </button>
                     </div>
-                  )}
+                  </div>
                 </div>
               )}
 
@@ -1353,40 +1400,53 @@ const PianoChordTeacher = () => {
               )}
 
               {/* Existing Selected Chord Display - only shown when not in scales mode */}
-              {!showScalesInterface && selectedChord && (
+              {!showScalesInterface && (
                 <>
-                  {/* Add extra vertical space only when chord is selected */}
+                  {/* Add extra vertical space */}
                   <div className="mb-6"></div> {/* Roughly 15% more spacing */}
                 
                   <div className="mb-8 p-6 bg-indigo-50 rounded-lg"> {/* Increased padding from p-4 to p-6 for ~15% more height */}
-                    <h3 className="text-xl font-semibold text-indigo-700">{selectedChord.name}</h3>
-                    <p className="text-gray-700 mb-4">{selectedChord.description}</p> {/* Increased from mb-3 to mb-4 */}
-                    <div className="flex gap-2">
-                      <span className="text-gray-600">Notes:</span>
-                      {selectedChord.notes.map((note) => {
-                        const isHighlighted = activeNotes.includes(note);
-                        return (
-                          <span 
-                            key={note} 
-                            className={`font-mono px-2 py-1 rounded transition-colors border ${
-                              isHighlighted 
-                                ? 'bg-indigo-500 text-white border-indigo-500' 
-                                : 'bg-indigo-200 text-indigo-700 border-indigo-400'
-                            }`}
-                          >
-                            {note}
-                          </span>
-                        );
-                      })}
-                    </div>
+                    {selectedChord ? (
+                      <>
+                        <h3 className="text-xl font-semibold text-indigo-700">{selectedChord.name}</h3>
+                        <p className="text-gray-700 mb-4">{selectedChord.description}</p> {/* Increased from mb-3 to mb-4 */}
+                        <div className="flex gap-2">
+                          <span className="text-gray-600">Notes:</span>
+                          {selectedChord.notes.map((note) => {
+                            const isHighlighted = activeNotes.includes(note);
+                            return (
+                              <span 
+                                key={note} 
+                                className={`font-mono px-2 py-1 rounded transition-colors border ${
+                                  isHighlighted 
+                                    ? 'bg-indigo-500 text-white border-indigo-500' 
+                                    : 'bg-indigo-200 text-indigo-700 border-indigo-400'
+                                }`}
+                              >
+                                {note}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="text-xl font-semibold text-indigo-700">Select a chord above</h3>
+                        <p className="text-gray-700 mb-4">Chord information will be displayed here</p>
+                        <div className="flex gap-2">
+                          <span className="text-gray-600">Notes:</span>
+                          <span className="text-gray-500 italic">Select a chord to see its notes</span>
+                        </div>
+                      </>
+                    )}
                         
                     {/* Add to Timeline Button for Chords */}
                     <div className="mt-4 flex justify-end">
                       <button
                         onClick={addToNextEmptySlot}
-                        disabled={isTimelineSequencePlaying}
+                        disabled={isTimelineSequencePlaying || !selectedChord}
                         className={`px-4 py-2 rounded-md flex items-center transition-colors ${
-                          isTimelineSequencePlaying
+                          isTimelineSequencePlaying || !selectedChord
                             ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             : 'bg-indigo-600 text-white hover:bg-indigo-700'
                         }`}
