@@ -2,9 +2,13 @@
   "name": "piano-chord-app",
   "version": "1.0.0",
   "description": "A simple piano chord learning app",
+  "homepage": "https://ItsNoahJ.github.io/piano-app",
   "scripts": {
     "start": "parcel index.html",
-    "build": "parcel build index.html"
+    "build": "parcel build index.html",
+    "predeploy": "rimraf dist && parcel build index.html --public-url ./ && copyfiles -u 1 public/404.html dist",
+    "deploy": "gh-pages -d dist",
+    "deploy:wizard": "node deploy.js"
   },
   "keywords": [
     "react",
@@ -20,12 +24,15 @@
     "tone": "^15.1.22"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.5",
+    "@tailwindcss/postcss": "^4.1.6",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.21",
+    "copyfiles": "^2.4.1",
+    "gh-pages": "^6.1.1",
     "parcel": "^2.14.4",
     "postcss": "^8.5.3",
+    "rimraf": "^6.0.1",
     "tailwindcss": "^4.1.5",
     "typescript": "^5.8.3"
   }

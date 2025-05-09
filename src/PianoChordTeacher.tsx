@@ -587,7 +587,7 @@ const PianoChordTeacher = () => {
       
       // Try to play the note with better error handling
       try {
-        synth.triggerAttackRelease(formattedNote, '8n', undefined, velocity);
+      synth.triggerAttackRelease(formattedNote, '8n', undefined, velocity);
       } catch (playError) {
         console.error(`Failed to play note ${formattedNote}:`, playError);
         return; // Exit early if note can't be played
@@ -1142,181 +1142,181 @@ const PianoChordTeacher = () => {
 
             {/* Container that will be transformed in landscape mode */}
             <div className={`${isLandscape ? 'mt-14 transform translate-y-[5%]' : ''}`}>
-              {/* Scales Interface */}
-              {showScalesInterface && (
-                <div className="mb-8">
-                  <h2 className="text-xl font-semibold mb-4 text-gray-800">Select a Scale/Mode to Learn</h2>
-                  
-                  {/* Root Note Selection */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2 text-gray-700">1. Choose a Root Note:</h3>
-                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2">
-                      {ROOT_NOTES.map(note => (
-                        <button
-                          key={note}
-                          onClick={() => setSelectedRootNote(note)}
-                          className={`px-3 py-2 rounded-md text-center transition-colors ${
-                            selectedRootNote === note
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                          }`}
-                        >
-                          {note}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Mode Selection - only enabled if root note is selected */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2 text-gray-700">2. Choose a Scale/Mode:</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                      {availableModes.map(mode => (
-                        <button
-                          key={mode}
-                          onClick={() => {
-                            setSelectedMode(mode);
-                            if (selectedRootNote) {
-                              const scaleNotes = getScaleNotes(selectedRootNote, startingOctave, mode);
-                              setCurrentScale(scaleNotes);
-                              // Use a small delay to ensure state is updated before playing
-                              setTimeout(() => playScale(scaleNotes), 100);
-                            }
-                          }}
-                          disabled={!selectedRootNote}
-                          className={`px-3 py-2 rounded-md transition-colors ${
-                            !selectedRootNote
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                              : selectedMode === mode
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                          }`}
-                        >
-                          {mode}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Octave Selection */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2 text-gray-700">3. Starting Octave:</h3>
-                    <div className="flex space-x-2">
-                      {[2, 3, 4].map(octave => (
-                        <button
-                          key={octave}
-                          onClick={() => {
-                            setStartingOctave(octave);
-                            if (selectedRootNote && selectedMode) {
-                              const scaleNotes = getScaleNotes(selectedRootNote, octave, selectedMode);
-                              setCurrentScale(scaleNotes);
-                              // Use a small delay to ensure state is updated before playing
-                              setTimeout(() => playScale(scaleNotes), 100);
-                            }
-                          }}
-                          className={`px-4 py-2 rounded-md transition-colors ${
-                            startingOctave === octave
-                              ? 'bg-indigo-600 text-white'
-                              : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                          }`}
-                        >
-                          {octave}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Add Playback Pattern Selection */}
-                  <div className="mb-6">
-                    <h3 className="text-lg font-medium mb-2 text-gray-700">4. Playback Pattern:</h3>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => {
-                          setPlaybackPattern('ascending');
-                        }}
-                        className={`px-4 py-2 rounded-md transition-colors ${
-                          playbackPattern === 'ascending'
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                        }`}
-                      >
-                        Ascending
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPlaybackPattern('descending');
-                        }}
-                        className={`px-4 py-2 rounded-md transition-colors ${
-                          playbackPattern === 'descending'
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                        }`}
-                      >
-                        Descending
-                      </button>
-                      <button
-                        onClick={() => {
-                          setPlaybackPattern('both');
-                        }}
-                        className={`px-4 py-2 rounded-md transition-colors ${
-                          playbackPattern === 'both'
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-                        }`}
-                      >
-                        Both
-                      </button>
-                    </div>
-                  </div>
-                  
+        {/* Scales Interface */}
+        {showScalesInterface && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 text-gray-800">Select a Scale/Mode to Learn</h2>
+            
+            {/* Root Note Selection */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2 text-gray-700">1. Choose a Root Note:</h3>
+              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-12 gap-2">
+                {ROOT_NOTES.map(note => (
+                  <button
+                    key={note}
+                    onClick={() => setSelectedRootNote(note)}
+                    className={`px-3 py-2 rounded-md text-center transition-colors ${
+                      selectedRootNote === note
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                  >
+                    {note}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Mode Selection - only enabled if root note is selected */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2 text-gray-700">2. Choose a Scale/Mode:</h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {availableModes.map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => {
+                      setSelectedMode(mode);
+                      if (selectedRootNote) {
+                        const scaleNotes = getScaleNotes(selectedRootNote, startingOctave, mode);
+                        setCurrentScale(scaleNotes);
+                        // Use a small delay to ensure state is updated before playing
+                        setTimeout(() => playScale(scaleNotes), 100);
+                      }
+                    }}
+                    disabled={!selectedRootNote}
+                    className={`px-3 py-2 rounded-md transition-colors ${
+                      !selectedRootNote
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : selectedMode === mode
+                          ? 'bg-indigo-600 text-white'
+                          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                  >
+                    {mode}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Octave Selection */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2 text-gray-700">3. Starting Octave:</h3>
+              <div className="flex space-x-2">
+                {[2, 3, 4].map(octave => (
+                  <button
+                    key={octave}
+                    onClick={() => {
+                      setStartingOctave(octave);
+                      if (selectedRootNote && selectedMode) {
+                        const scaleNotes = getScaleNotes(selectedRootNote, octave, selectedMode);
+                        setCurrentScale(scaleNotes);
+                        // Use a small delay to ensure state is updated before playing
+                        setTimeout(() => playScale(scaleNotes), 100);
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-md transition-colors ${
+                      startingOctave === octave
+                        ? 'bg-indigo-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    }`}
+                  >
+                    {octave}
+                  </button>
+                ))}
+              </div>
+            </div>
+            
+            {/* Add Playback Pattern Selection */}
+            <div className="mb-6">
+              <h3 className="text-lg font-medium mb-2 text-gray-700">4. Playback Pattern:</h3>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    setPlaybackPattern('ascending');
+                  }}
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    playbackPattern === 'ascending'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
+                >
+                  Ascending
+                </button>
+                <button
+                  onClick={() => {
+                    setPlaybackPattern('descending');
+                  }}
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    playbackPattern === 'descending'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
+                >
+                  Descending
+                </button>
+                <button
+                  onClick={() => {
+                    setPlaybackPattern('both');
+                  }}
+                  className={`px-4 py-2 rounded-md transition-colors ${
+                    playbackPattern === 'both'
+                      ? 'bg-indigo-600 text-white'
+                      : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                  }`}
+                >
+                  Both
+                </button>
+              </div>
+            </div>
+            
                   {/* Scale Information Display - always visible in scales mode */}
-                  <div className="mb-8 p-4 bg-indigo-50 rounded-lg">
+              <div className="mb-8 p-4 bg-indigo-50 rounded-lg">
                     {selectedRootNote && selectedMode && currentScale.length > 0 ? (
                       <>
-                        <h3 className="text-xl font-semibold text-indigo-700 mb-4">
-                          {formatScaleName(selectedRootNote, selectedMode)}
-                        </h3>
-                        
-                        <div className="flex items-center"> {/* Changed to items-center for vertical alignment */}
-                          {/* Tempo Control Area - Moved to the left */}
-                          <div className="flex-shrink-0 mr-8"> {/* Added mr-8 for spacing */}
-                            <h3 className="text-lg font-medium mb-2 text-gray-700">Tempo (BPM):</h3>
-                            <div className="flex items-center space-x-2">
-                              <input
-                                type="range"
-                                min="60"
-                                max="240"
-                                step="10"
-                                value={playbackTempo}
-                                onChange={(e) => setPlaybackTempo(parseInt(e.target.value))}
-                                className="w-36"
-                              />
-                              <span className="text-gray-700 w-10 text-sm">{playbackTempo}</span>
-                            </div>
-                          </div>
+                <h3 className="text-xl font-semibold text-indigo-700 mb-4">
+                  {formatScaleName(selectedRootNote, selectedMode)}
+                </h3>
+                
+                <div className="flex items-center"> {/* Changed to items-center for vertical alignment */}
+                  {/* Tempo Control Area - Moved to the left */}
+                  <div className="flex-shrink-0 mr-8"> {/* Added mr-8 for spacing */}
+                    <h3 className="text-lg font-medium mb-2 text-gray-700">Tempo (BPM):</h3>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="range"
+                        min="60"
+                        max="240"
+                        step="10"
+                        value={playbackTempo}
+                        onChange={(e) => setPlaybackTempo(parseInt(e.target.value))}
+                        className="w-36"
+                      />
+                      <span className="text-gray-700 w-10 text-sm">{playbackTempo}</span>
+                    </div>
+                  </div>
 
-                          {/* Notes Display Area */}
-                          <div className="flex-grow">
-                            <div className="flex flex-wrap gap-2 items-center">
-                              <span className="text-gray-600">Notes:</span>
-                              {currentScale.map((note) => {
-                                const isHighlighted = activeNotes.includes(note);
-                                return (
-                                  <span 
-                                    key={note} 
-                                    className={`font-mono px-2 py-1 rounded transition-colors border ${
-                                      isHighlighted 
-                                        ? 'bg-indigo-500 text-white border-indigo-500' 
-                                        : 'bg-indigo-200 text-indigo-700 border-indigo-400'
-                                    }`}
-                                  >
-                                    {note}
-                                  </span>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        </div>
+                  {/* Notes Display Area */}
+                  <div className="flex-grow">
+                    <div className="flex flex-wrap gap-2 items-center">
+                      <span className="text-gray-600">Notes:</span>
+                      {currentScale.map((note) => {
+                        const isHighlighted = activeNotes.includes(note);
+                        return (
+                          <span 
+                            key={note} 
+                            className={`font-mono px-2 py-1 rounded transition-colors border ${
+                              isHighlighted 
+                                ? 'bg-indigo-500 text-white border-indigo-500' 
+                                : 'bg-indigo-200 text-indigo-700 border-indigo-400'
+                            }`}
+                          >
+                            {note}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
                       </>
                     ) : (
                       <>
@@ -1369,37 +1369,37 @@ const PianoChordTeacher = () => {
                         </svg>
                         Add to Timeline
                       </button>
-                    </div>
-                  </div>
                 </div>
-              )}
+              </div>
+          </div>
+        )}
 
-              {/* Existing Chord Selection UI - only shown when not in scales mode */}
-              {!showScalesInterface && (
-                <div className="mb-8">
+        {/* Existing Chord Selection UI - only shown when not in scales mode */}
+        {!showScalesInterface && (
+          <div className="mb-8">
                   {/* Remove the heading from here in landscape mode since we've positioned it absolutely above */}
                   {!isLandscape && <h2 className="text-xl font-semibold mb-4 text-gray-800">Select a Chord to Learn</h2>}
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                    {chords.map((chord) => (
-                      <button
-                        key={chord.name}
-                        onClick={() => {
-                          setSelectedChord(chord);
-                          playChord(chord.notes); // Automatically play the chord when selected
-                        }}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {chords.map((chord) => (
+                <button
+                  key={chord.name}
+                  onClick={() => {
+                    setSelectedChord(chord);
+                    playChord(chord.notes); // Automatically play the chord when selected
+                  }}
                         className={`rounded-md text-center transition-colors shadow ${selectedChord?.name === chord.name
-                          ? 'bg-indigo-600 text-white'
-                          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
                         } py-6 px-4`}
-                      >
-                        {chord.name}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+                >
+                  {chord.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-              {/* Existing Selected Chord Display - only shown when not in scales mode */}
+        {/* Existing Selected Chord Display - only shown when not in scales mode */}
               {!showScalesInterface && (
                 <>
                   {/* Add extra vertical space */}
@@ -1408,26 +1408,26 @@ const PianoChordTeacher = () => {
                   <div className="mb-8 p-6 bg-indigo-50 rounded-lg"> {/* Increased padding from p-4 to p-6 for ~15% more height */}
                     {selectedChord ? (
                       <>
-                        <h3 className="text-xl font-semibold text-indigo-700">{selectedChord.name}</h3>
+            <h3 className="text-xl font-semibold text-indigo-700">{selectedChord.name}</h3>
                         <p className="text-gray-700 mb-4">{selectedChord.description}</p> {/* Increased from mb-3 to mb-4 */}
-                        <div className="flex gap-2">
-                          <span className="text-gray-600">Notes:</span>
-                          {selectedChord.notes.map((note) => {
-                            const isHighlighted = activeNotes.includes(note);
-                            return (
-                              <span 
-                                key={note} 
-                                className={`font-mono px-2 py-1 rounded transition-colors border ${
-                                  isHighlighted 
-                                    ? 'bg-indigo-500 text-white border-indigo-500' 
-                                    : 'bg-indigo-200 text-indigo-700 border-indigo-400'
-                                }`}
-                              >
-                                {note}
-                              </span>
-                            );
-                          })}
-                        </div>
+            <div className="flex gap-2">
+              <span className="text-gray-600">Notes:</span>
+              {selectedChord.notes.map((note) => {
+                const isHighlighted = activeNotes.includes(note);
+                return (
+                  <span 
+                    key={note} 
+                    className={`font-mono px-2 py-1 rounded transition-colors border ${
+                      isHighlighted 
+                        ? 'bg-indigo-500 text-white border-indigo-500' 
+                        : 'bg-indigo-200 text-indigo-700 border-indigo-400'
+                    }`}
+                  >
+                    {note}
+                  </span>
+                );
+              })}
+            </div>
                       </>
                     ) : (
                       <>
@@ -1439,120 +1439,120 @@ const PianoChordTeacher = () => {
                         </div>
                       </>
                     )}
-                        
-                    {/* Add to Timeline Button for Chords */}
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={addToNextEmptySlot}
+                
+                {/* Add to Timeline Button for Chords */}
+                <div className="mt-4 flex justify-end">
+                  <button
+                    onClick={addToNextEmptySlot}
                         disabled={isTimelineSequencePlaying || !selectedChord}
-                        className={`px-4 py-2 rounded-md flex items-center transition-colors ${
+                    className={`px-4 py-2 rounded-md flex items-center transition-colors ${
                           isTimelineSequencePlaying || !selectedChord
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                            : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        }`}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
-                        </svg>
-                        Add to Timeline
-                      </button>
-                    </div>
-                  </div>
+                        ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+                    </svg>
+                    Add to Timeline
+                  </button>
+            </div>
+          </div>
                 </>
-              )}
+        )}
             </div>
           </div>
 
           {/* Bottom section - Interactive Piano, Timeline Sequencer, and Keyboard Controls */}
           <div className={`w-full ${isLandscape ? 'pl-2' : ''}`}>
-            <div className="mb-4">
-              <h2 className={`${isLandscape ? 'text-lg' : 'text-xl'} font-semibold mb-2 text-gray-800`}>Interactive Piano</h2>
-              <p className={`text-gray-600 mb-4 ${isLandscape ? 'text-sm' : ''}`}>Click on keys or use your computer keyboard to play notes</p>
-            </div>
+        <div className="mb-4">
+          <h2 className={`${isLandscape ? 'text-lg' : 'text-xl'} font-semibold mb-2 text-gray-800`}>Interactive Piano</h2>
+          <p className={`text-gray-600 mb-4 ${isLandscape ? 'text-sm' : ''}`}>Click on keys or use your computer keyboard to play notes</p>
+        </div>
 
             <div className={`relative ${isLandscape ? 'h-40' : 'h-64'} ${isLandscape ? 'mb-4' : 'mb-8'} overflow-hidden border border-gray-600 rounded-md bg-black shadow-lg`}>
-              {/* Piano container with fixed dimensions to prevent layout shifts */}
+          {/* Piano container with fixed dimensions to prevent layout shifts */}
               <div className="relative flex h-full w-full" style={{ minHeight: isLandscape ? "8rem" : "14rem" }}>
-                {/* First, render all white keys */}
-                {notes.filter(note => !note.isBlack).map((whiteNote, index, whiteKeysArray) => {
-                  const isActive = activeNotes.includes(whiteNote.note);
-                  const isInChord = isNoteInSelectedChord(whiteNote.note);
-                  const totalWhiteKeys = whiteKeysArray.length;
-                  
-                  return (
-                    <div 
-                      key={whiteNote.note} 
-                      className="h-full" 
-                      style={{ width: `${100 / totalWhiteKeys}%` }}
-                    >
-                      <button
-                        onClick={() => playNote(whiteNote.note)}
-                        className={`h-full w-full border border-gray-500 rounded-b-lg flex items-end justify-center pb-2 transition-colors shadow-inner ${
-                          isActive
-                            ? 'bg-indigo-300'
-                            : isInChord
-                              ? 'bg-indigo-200'
-                              : 'bg-white hover:bg-gray-100'
-                        }`}
-                        data-note={whiteNote.note}
-                      >
-                        <span className={`text-xs font-semibold ${isInChord ? 'text-indigo-700' : 'text-gray-600'}`}>
-                          {whiteNote.note}
-                        </span>
-                      </button>
-                    </div>
-                  );
-                })}
-                
-                {/* Now render all black keys as an overlay */}
-                {notes.filter(note => note.isBlack).map(blackKey => {
-                  const isActive = activeNotes.includes(blackKey.note);
-                  const isInChord = isNoteInSelectedChord(blackKey.note);
-                  const octave = parseInt(blackKey.note.slice(-1));
-                  const noteLetter = blackKey.note.charAt(0);
-                  
-                  // Find the corresponding white key for positioning
-                  const whiteKeys = notes.filter(note => !note.isBlack);
-                  const precedingWhiteKey = whiteKeys.find(
-                    note => note.note.charAt(0) === noteLetter && note.note.includes(octave.toString())
-                  );
-                  
-                  if (!precedingWhiteKey) {
-                    console.warn(`Could not find preceding white key for ${blackKey.note}`);
-                    return null;
-                  }
-                  
-                  // Calculate position
-                  const whiteKeyIndex = whiteKeys.indexOf(precedingWhiteKey);
-                  const totalWhiteKeys = whiteKeys.length;
-                  const position = (whiteKeyIndex / totalWhiteKeys) * 100 + 0.65 * (100 / totalWhiteKeys);
-                  
-                  return (
-                    <button
-                      key={blackKey.note}
-                      onClick={() => playNote(blackKey.note)}
-                      className={`absolute h-3/5 rounded-b-md z-10 transition-colors pointer-events-auto shadow-md border-x border-b ${
-                        isActive
-                          ? 'bg-indigo-700 border-indigo-900'
-                          : isInChord
-                            ? 'bg-indigo-800 border-indigo-900 shadow-inner'
-                            : 'bg-gray-800 hover:bg-gray-700 border-gray-800'
-                      }`}
-                      style={{ 
-                        left: `${position}%`,
-                        width: `${0.65 * (100 / totalWhiteKeys)}%`,
-                        top: 0
-                      }}
-                      data-note={blackKey.note}
-                    >
-                      <span className="text-xs font-semibold text-white absolute bottom-2 left-0 right-0 text-center">
-                        {blackKey.note}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {/* First, render all white keys */}
+            {notes.filter(note => !note.isBlack).map((whiteNote, index, whiteKeysArray) => {
+              const isActive = activeNotes.includes(whiteNote.note);
+              const isInChord = isNoteInSelectedChord(whiteNote.note);
+              const totalWhiteKeys = whiteKeysArray.length;
+              
+              return (
+                <div 
+                  key={whiteNote.note} 
+                  className="h-full" 
+                  style={{ width: `${100 / totalWhiteKeys}%` }}
+                >
+                  <button
+                    onClick={() => playNote(whiteNote.note)}
+                    className={`h-full w-full border border-gray-500 rounded-b-lg flex items-end justify-center pb-2 transition-colors shadow-inner ${
+                      isActive
+                        ? 'bg-indigo-300'
+                        : isInChord
+                          ? 'bg-indigo-200'
+                          : 'bg-white hover:bg-gray-100'
+                    }`}
+                    data-note={whiteNote.note}
+                  >
+                    <span className={`text-xs font-semibold ${isInChord ? 'text-indigo-700' : 'text-gray-600'}`}>
+                      {whiteNote.note}
+                    </span>
+                  </button>
+                </div>
+              );
+            })}
+            
+            {/* Now render all black keys as an overlay */}
+            {notes.filter(note => note.isBlack).map(blackKey => {
+              const isActive = activeNotes.includes(blackKey.note);
+              const isInChord = isNoteInSelectedChord(blackKey.note);
+              const octave = parseInt(blackKey.note.slice(-1));
+              const noteLetter = blackKey.note.charAt(0);
+              
+              // Find the corresponding white key for positioning
+              const whiteKeys = notes.filter(note => !note.isBlack);
+              const precedingWhiteKey = whiteKeys.find(
+                note => note.note.charAt(0) === noteLetter && note.note.includes(octave.toString())
+              );
+              
+              if (!precedingWhiteKey) {
+                console.warn(`Could not find preceding white key for ${blackKey.note}`);
+                return null;
+              }
+              
+              // Calculate position
+              const whiteKeyIndex = whiteKeys.indexOf(precedingWhiteKey);
+              const totalWhiteKeys = whiteKeys.length;
+              const position = (whiteKeyIndex / totalWhiteKeys) * 100 + 0.65 * (100 / totalWhiteKeys);
+              
+              return (
+                <button
+                  key={blackKey.note}
+                  onClick={() => playNote(blackKey.note)}
+                  className={`absolute h-3/5 rounded-b-md z-10 transition-colors pointer-events-auto shadow-md border-x border-b ${
+                    isActive
+                      ? 'bg-indigo-700 border-indigo-900'
+                      : isInChord
+                        ? 'bg-indigo-800 border-indigo-900 shadow-inner'
+                        : 'bg-gray-800 hover:bg-gray-700 border-gray-800'
+                  }`}
+                  style={{ 
+                    left: `${position}%`,
+                    width: `${0.65 * (100 / totalWhiteKeys)}%`,
+                    top: 0
+                  }}
+                  data-note={blackKey.note}
+                >
+                  <span className="text-xs font-semibold text-white absolute bottom-2 left-0 right-0 text-center">
+                    {blackKey.note}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
             {/* Timeline Sequencer */}
             <TimelineSequencer
@@ -1573,7 +1573,7 @@ const PianoChordTeacher = () => {
             />
 
             <KeyboardControls isLandscape={isLandscape} />
-          </div>
+              </div>
         </div>
       </div>
     </div>
