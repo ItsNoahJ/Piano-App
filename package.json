@@ -2,11 +2,11 @@
   "name": "piano-chord-app",
   "version": "1.0.0",
   "description": "A simple piano chord learning app",
-  "homepage": "https://ItsNoahJ.github.io/piano-app",
+  "homepage": "https://ItsNoahJ.github.io/Piano-App",
   "scripts": {
     "start": "parcel index.html",
     "build": "parcel build index.html",
-    "predeploy": "rimraf dist && parcel build index.html --public-url /piano-app/ && copyfiles -u 1 public/404.html dist",
+    "predeploy": "rimraf dist && parcel build index.html --public-url /Piano-App/ && copyfiles -u 1 public/404.html dist",
     "deploy": "gh-pages -d dist",
     "deploy:wizard": "node deploy.js"
   },
