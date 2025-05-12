@@ -63031,11 +63031,12 @@ function $da9882e673ac146b$var$ErrorOverlay() {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "initMobileOptimizations", ()=>initMobileOptimizations);
+parcelHelpers.export(exports, "isTouchDevice", ()=>isTouchDevice);
 parcelHelpers.export(exports, "isMobileDevice", ()=>isMobileDevice);
 parcelHelpers.export(exports, "optimizePianoForTouch", ()=>optimizePianoForTouch);
 const initMobileOptimizations = ()=>{
     // Only run on mobile devices
-    if (!isMobileDevice()) return;
+    if (!isTouchDevice()) return;
     // 300ms tap delay fix (for older browsers that might not support this natively)
     document.addEventListener('touchstart', function() {}, {
         passive: true
@@ -63063,11 +63064,18 @@ const initMobileOptimizations = ()=>{
         });
     });
 };
-const isMobileDevice = ()=>{
-    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.matchMedia && window.matchMedia('(max-width: 767px)').matches;
+const isTouchDevice = ()=>{
+    // First check for touch capability
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+    // Then check device type via user agent
+    const isMobileUserAgent = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    // Lastly check screen size (up to 1024px)
+    const isSmallScreen = window.matchMedia && window.matchMedia('(max-width: 1023px)').matches;
+    return hasTouch && (isMobileUserAgent || isSmallScreen);
 };
+const isMobileDevice = isTouchDevice;
 const optimizePianoForTouch = ()=>{
-    if (!isMobileDevice()) return;
+    if (!isTouchDevice()) return;
     // Make piano keys more responsive on touch
     const pianoKeys = document.querySelectorAll('button[data-note]');
     pianoKeys.forEach((key)=>{
