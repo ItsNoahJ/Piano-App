@@ -16,4 +16,104 @@ code {
     monospace;
 }
 
-/* Add global styles here if needed */ 
+/* Add global styles here if needed */
+
+/* Mobile-specific optimizations that don't change desktop UI */
+
+/* Only apply these styles on screens smaller than 768px (mobile devices) */
+@media (max-width: 767px) {
+  /* Improve touch targets */
+  button, 
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 10px !important;
+  }
+  
+  /* Better spacing for mobile */
+  .p-4 {
+    padding: 1rem !important;
+  }
+  
+  /* Ensure content doesn't overflow */
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+  
+  /* Touch-friendly piano keys */
+  button[data-note] {
+    min-height: 80px !important;
+  }
+  
+  /* Improve scale notes display */
+  span[class*="font-mono px-2 py-1"] {
+    margin: 3px; 
+    padding: 8px !important;
+  }
+  
+  /* Timeline slots better spacing */
+  div[class*="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"] {
+    gap: 1rem !important;
+  }
+  
+  /* Prevent font size from being too small */
+  .text-xs {
+    font-size: 0.8rem !important;
+  }
+  
+  /* Improved vertical spacing */
+  .mb-4 {
+    margin-bottom: 1.25rem !important;
+  }
+  
+  /* Better form controls */
+  input[type="range"] {
+    height: 30px !important;
+  }
+
+  /* Touch active state for touch interactions */
+  .touch-active {
+    opacity: 0.7 !important;
+    transform: scale(0.98) !important;
+    transition: transform 0.1s ease-in-out, opacity 0.1s ease-in-out !important;
+  }
+  
+  /* Piano key specific touch active state */
+  button[data-note].touch-active {
+    transform: scale(0.95) !important;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1) !important;
+  }
+}
+
+/* Fix any touch zoom issues on inputs */
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Optimize for iPhone SE and other very small screens */
+@media (max-width: 374px) {
+  h2 {
+    font-size: 1.2rem !important;
+  }
+  
+  p {
+    font-size: 0.9rem !important;
+  }
+  
+  /* Stack buttons on very small screens */
+  div.flex.space-x-2 {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  button.px-4 {
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+} 
