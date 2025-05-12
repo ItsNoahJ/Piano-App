@@ -20,7 +20,51 @@ code {
 
 /* Mobile-specific optimizations that don't change desktop UI */
 
-/* Only apply these styles on screens smaller than 768px (mobile devices) */
+/* Apply these styles to all mobile and tablet devices (up to 1024px) */
+@media (max-width: 1023px) {
+  /* Ensure content doesn't overflow */
+  html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Prevent font size from being too small */
+  .text-xs {
+    font-size: 0.8rem !important;
+  }
+  
+  /* Fix any touch zoom issues on inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Medium-sized mobile devices and tablets */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Improve touch targets, but less aggressively than on small phones */
+  button, 
+  [role="button"],
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 8px !important;
+  }
+  
+  /* Touch-friendly piano keys, but sized appropriately for larger screens */
+  button[data-note] {
+    min-height: 70px !important;
+  }
+  
+  /* Improve scale notes display */
+  span[class*="font-mono px-2 py-1"] {
+    margin: 2px; 
+    padding: 6px !important;
+  }
+}
+
+/* Small mobile devices (phones) */
 @media (max-width: 767px) {
   /* Improve touch targets */
   button, 
@@ -38,12 +82,6 @@ code {
     padding: 1rem !important;
   }
   
-  /* Ensure content doesn't overflow */
-  html, body {
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-  
   /* Touch-friendly piano keys */
   button[data-note] {
     min-height: 80px !important;
@@ -58,11 +96,6 @@ code {
   /* Timeline slots better spacing */
   div[class*="grid-cols-1 sm:grid-cols-2 lg:grid-cols-4"] {
     gap: 1rem !important;
-  }
-  
-  /* Prevent font size from being too small */
-  .text-xs {
-    font-size: 0.8rem !important;
   }
   
   /* Improved vertical spacing */
@@ -89,14 +122,7 @@ code {
   }
 }
 
-/* Fix any touch zoom issues on inputs */
-@media (max-width: 767px) {
-  input, select, textarea {
-    font-size: 16px !important;
-  }
-}
-
-/* Optimize for iPhone SE and other very small screens */
+/* Very small mobile screens */
 @media (max-width: 374px) {
   h2 {
     font-size: 1.2rem !important;
